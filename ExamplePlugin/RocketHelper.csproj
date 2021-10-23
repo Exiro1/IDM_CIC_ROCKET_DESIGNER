@@ -62,14 +62,9 @@
     <Compile Include="Fin.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Nosecone.cs" />
-    <Compile Include="PartCreator\NoseCone.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Rocket.cs" />
     <Compile Include="RocketElement.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="noseconeMacro.swp" />
-    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
