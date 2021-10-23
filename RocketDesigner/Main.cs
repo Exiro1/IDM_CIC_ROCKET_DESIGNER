@@ -17,7 +17,6 @@ using IdmCic.API.Model.Physics.TopologicalOperations;
 using IdmCic.API.Model.Physics.Objects3D.Solids;
 using System.Xml;
 using Microsoft.Win32;
-using ExamplePlugin;
 using IdmCic.API.Model.Physics;
 using Microsoft.Office.Interop.Excel;
 using Assembly = IdmCic.API.Model.Subsystems.Assembly;
@@ -184,17 +183,18 @@ namespace RocketDesigner
 		public string updateRocketXML(MainSystem mainSystem)
 		{
 			string fileCreated = "";
-			foreach(Element e in mainSystem.Elements)
+			foreach (Element e in mainSystem.Elements)
 			{
 				foreach (RelatedSubsystem s in e.RelatedSubsystems)
 				{
 
 					Rocket r = getRocketFromElement(s);
-					if (r != null) {
+					if (r != null)
+					{
 						string filec = r.generateXMLFile(e.Name.Replace(" ", ""));
 
 						System.IO.File.Copy(filec, Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\ras.CDX1"), true);
-						
+
 						fileCreated = fileCreated + filec + ";";
 					}
 				}
@@ -219,10 +219,10 @@ namespace RocketDesigner
 			Process p = new Process();
 			p.StartInfo = new ProcessStartInfo(exefile);
 			p.StartInfo.WorkingDirectory = assemblyFolder;
-			
-			p.StartInfo.Arguments =  filename;
+
+			p.StartInfo.Arguments = filename;
 			p.Start();
-			
+
 		}
 
 		private void calculateAeroImpl(PluginActionArgs args)
@@ -250,10 +250,6 @@ namespace RocketDesigner
 			System.IO.File.Move(fileName.Replace("txt", "CSV"), fileName);
 			try
 			{
-
-
-
-
 				Microsoft.Office.Interop.Excel.Application app = (Excel.Application)System.Runtime.InteropServices.Marshal.GetActiveObject("Excel.Application");
 
 				foreach (Worksheet ws in app.ActiveWorkbook.Worksheets)
@@ -289,10 +285,10 @@ namespace RocketDesigner
 							if (assemb.Name == "Rocket")
 							{
 								bool ex = false;
-								
-								foreach(CoordinateSystemDefinition coord in assemb.CoordinateSystems)
+
+								foreach (CoordinateSystemDefinition coord in assemb.CoordinateSystems)
 								{
-									if(coord.Name == "CP")
+									if (coord.Name == "CP")
 									{
 										updateCP(assemb);
 										ex = true;
@@ -305,7 +301,7 @@ namespace RocketDesigner
 									updateCP(assemb);
 								}
 
-								
+
 							}
 						}
 					}
@@ -342,13 +338,13 @@ namespace RocketDesigner
 			{
 				Worksheet worksheet = (Worksheet)wb.Worksheets["ras2"];
 				mach = Math.Round(mach * 100);
-				int row = Math.Min(Math.Max(1, (int)mach),2500);
-				string cp = ((Range)worksheet.Cells[1+row, 13]).FormulaLocal.ToString();
+				int row = Math.Min(Math.Max(1, (int)mach), 2500);
+				string cp = ((Range)worksheet.Cells[1 + row, 13]).FormulaLocal.ToString();
 				return toMeter(Double.Parse(cp));
 			}
-			catch(Exception er)
+			catch (Exception er)
 			{
-				
+
 			}
 
 			return 0;
@@ -389,7 +385,7 @@ namespace RocketDesigner
 		private void AssemblyAddActionImpl(PluginObjectActionArgs args)
 		{
 			Assembly ass = ((Assembly)args.IdmObject);
-		
+
 			foreach (CoordinateSystemDefinition coord in ass.CoordinateSystems)
 			{
 				if (coord.Name == "COG")
@@ -397,7 +393,7 @@ namespace RocketDesigner
 					return;
 				}
 			}
-			CoordinateSystemDefinition cog =  ass.AddCoordinateSystem();
+			CoordinateSystemDefinition cog = ass.AddCoordinateSystem();
 			cog.Name = "COG";
 			cog.Position.SetPropertyFormula("X", "[" + ass.GetFullPropertyName("GetCog()_x") + "]");
 			cog.Position.SetPropertyFormula("Y", "[" + ass.GetFullPropertyName("GetCog()_y") + "]");
@@ -675,7 +671,7 @@ namespace RocketDesigner
 			bopp2.Position.SetPropertyFormula("Rotation1", "90");
 			bopp2.Position.SetPropertyFormula("Rotation2", "90 + [" + propAng.FullId.ToLower() + "_value]");
 			bopp2.Position.SetPropertyFormula("Rotation3", "-90");
-			
+
 
 			BooleanOperation bopp5 = ((IdmCic.API.Model.Physics.Objects3D.Miscs.Topology)shape.ShapeDefinition).AddBooleanOperation(IdmCic.API.Model.Physics.Objects3D.Object3dType.Box);
 			bopp5.OperationType = OperationType.Difference;
@@ -840,7 +836,7 @@ namespace RocketDesigner
 
 
 
-		
+
 		/*
 		public void test(MainSystem syst)
 		{
@@ -892,7 +888,7 @@ namespace RocketDesigner
 
 					double invsweep = ((double)e.GetProperty("finh").Value) / Math.Tan((180 - (double)e.GetProperty("finA2").Value) * Math.PI / 180);
 
-					Fin fi = new Fin((double)e.GetProperty("finl").Value, (double)e.GetProperty("finh").Value, sweep, (double)e.GetProperty("finl").Value - sweep - invsweep, (double)e.GetProperty("finth").Value, 0, 1, 1, "Hexagonal",0);
+					Fin fi = new Fin((double)e.GetProperty("finl").Value, (double)e.GetProperty("finh").Value, sweep, (double)e.GetProperty("finl").Value - sweep - invsweep, (double)e.GetProperty("finth").Value, 0, 1, 1, "Hexagonal", 0);
 					fi.Name = e.Name;
 					r.addElement(fi);
 				}
@@ -905,7 +901,7 @@ namespace RocketDesigner
 				}
 				else if (e.Name.Contains("RocketTransition"))
 				{
-					Transition tr = new Transition((double)e.GetProperty("transiH").Value,(double)e.GetProperty("transiTopR").Value, (double)e.GetProperty("transiBotR").Value);
+					Transition tr = new Transition((double)e.GetProperty("transiH").Value, (double)e.GetProperty("transiTopR").Value, (double)e.GetProperty("transiBotR").Value);
 					tr.Name = e.Name;
 					r.addElement(tr);
 				}
@@ -930,7 +926,8 @@ namespace RocketDesigner
 						el1.Top = el2;
 						el2.Bot = el1;
 					}
-				}catch(Exception e)
+				}
+				catch (Exception e)
 				{
 
 				}
