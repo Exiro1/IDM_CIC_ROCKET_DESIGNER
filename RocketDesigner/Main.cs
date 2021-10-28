@@ -121,6 +121,7 @@ namespace RocketDesigner
 					swinstalled = true;
 					swApp = new SldWorks();
 					swApp.Visible = false;
+					
 				}
 			}
 
@@ -163,10 +164,6 @@ namespace RocketDesigner
 
 		private void System_OnPropertyChanged(ModelEventInfo info)
 		{// detect the change on all equipments'name property
-			if (info.PropertyName == "Value" && info.IsRootEvent)
-			{
-				int x = 20;
-			}
 			if (info.Dispatcher is IdmCic.API.Model.IdmProperties.Property && info.PropertyName == "Value" && (info.Dispatcher.Id == "noseconeH" || info.Dispatcher.Id == "noseconeR" || info.Dispatcher.Id == "noseconeTh"))
 			{
 				updateNoseCone((Equipment)info.Dispatcher.Parent, info);
@@ -328,6 +325,33 @@ namespace RocketDesigner
 					coord.Position.SetPropertyFormula("Z", "mm_m(" + (dist * 1000).ToString().Replace(",", ".") + ")");
 				}
 			}
+			staticMargin(assemb);
+		}
+		public void staticMargin(Assembly assemb)
+		{
+			Microsoft.Office.Interop.Excel.Application app = (Excel.Application)System.Runtime.InteropServices.Marshal.GetActiveObject("Excel.Application");
+			Excel.Workbook wb = app.ActiveWorkbook;
+			try
+			{
+				Worksheet worksheet = (Worksheet)wb.Worksheets["ras2"];
+				
+				((Range)worksheet.Cells[1, 17]).FormulaR1C1 = "Marge Statique";
+				((Range)worksheet.Cells[2, 17]).Select();
+				app.ActiveCell.FormulaR1C1 = "=((RC[-4]/39)*1000) - @IdmGet(\""+ assemb.GetFullPropertyName("GetCog()_z") + "\")";
+				app.ActiveCell.AutoFill(worksheet.Range["Q2","Q1001"], XlAutoFillType.xlFillDefault);
+
+				worksheet.Shapes.AddChart2(227, XlChartType.xlLine).Name = "Marge Statique";
+				((Excel.ChartObject) worksheet.ChartObjects("Marge Statique")).Activate();
+				((Series)app.ActiveChart.FullSeriesCollection(1)).Name = "='ras2'!$Q$1";
+				((Series)app.ActiveChart.FullSeriesCollection(1)).Values = "='ras2'!$Q$2:$Q$1001";
+				((Series)app.ActiveChart.FullSeriesCollection(1)).XValues = "='ras2'!$A$2:$A$1001";
+				((Range)worksheet.Cells[1, 1]).Select();
+
+			}
+			catch (Exception er)
+			{
+
+			}
 		}
 
 		public double getCP(Double mach)
@@ -337,6 +361,7 @@ namespace RocketDesigner
 			try
 			{
 				Worksheet worksheet = (Worksheet)wb.Worksheets["ras2"];
+
 				mach = Math.Round(mach * 100);
 				int row = Math.Min(Math.Max(1, (int)mach), 2500);
 				string cp = ((Range)worksheet.Cells[1 + row, 13]).FormulaLocal.ToString();
@@ -386,6 +411,8 @@ namespace RocketDesigner
 		{
 			Assembly ass = ((Assembly)args.IdmObject);
 
+			ass.Name = "Rocket";
+
 			foreach (CoordinateSystemDefinition coord in ass.CoordinateSystems)
 			{
 				if (coord.Name == "COG")
@@ -403,15 +430,26 @@ namespace RocketDesigner
 			propMach.Name = "Mach";
 			propMach.Value = 0.0;
 
+			IdmCic.API.Model.IdmProperties.Property propType = ((Equipment)args.IdmObject).AddProperty("Rocket", IdmCic.API.Model.IdmProperties.IdmPropertyType.Bool);
+			propType.Name = "Rocket";
+			propType.Value = true;
+			propType.Hidden = true;
+
 
 		}
 
 		private void TransitionAddActionImpl(PluginObjectActionArgs args)
 		{
+			IdmCic.API.Model.IdmProperties.Property propType = ((Equipment)args.IdmObject).AddProperty("RocketTransition", IdmCic.API.Model.IdmProperties.IdmPropertyType.Bool);
+			propType.Name = "RocketTransition";
+			propType.Value = true;
+			propType.Hidden = true;
 
 			IdmCic.API.Model.IdmProperties.Property propTopRadius = ((Equipment)args.IdmObject).AddProperty("transiTopR", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
 			propTopRadius.Name = "Top Radius";
 			propTopRadius.Value = 0.3;
+
+			
 
 			IdmCic.API.Model.IdmProperties.Property propBotRadius = ((Equipment)args.IdmObject).AddProperty("transiBotR", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
 			propBotRadius.Name = "Bot Radius";
@@ -449,6 +487,11 @@ namespace RocketDesigner
 
 		private void BodyAddActionImpl(PluginObjectActionArgs args)
 		{
+
+			IdmCic.API.Model.IdmProperties.Property propType = ((Equipment)args.IdmObject).AddProperty("RocketBody", IdmCic.API.Model.IdmProperties.IdmPropertyType.Bool);
+			propType.Name = "RocketBody";
+			propType.Value = true;
+			propType.Hidden = true;
 
 			IdmCic.API.Model.IdmProperties.Property propRadius = ((Equipment)args.IdmObject).AddProperty("bodyR", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
 			propRadius.Name = "Radius";
@@ -570,6 +613,11 @@ namespace RocketDesigner
 		private void NoseConeAddActionImpl(PluginObjectActionArgs args)
 		{
 
+			IdmCic.API.Model.IdmProperties.Property propType = ((Equipment)args.IdmObject).AddProperty("RocketNoseCone", IdmCic.API.Model.IdmProperties.IdmPropertyType.Bool);
+			propType.Name = "RocketNoseCone";
+			propType.Value = true;
+			propType.Hidden = true;
+
 			IdmCic.API.Model.IdmProperties.Property propRadius = ((Equipment)args.IdmObject).AddProperty("noseconeR", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
 			propRadius.Name = "Radius";
 			propRadius.Value = 0.3;
@@ -578,7 +626,7 @@ namespace RocketDesigner
 			propH.Value = 1;
 			IdmCic.API.Model.IdmProperties.Property propTh = ((Equipment)args.IdmObject).AddProperty("noseconeTh", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
 			propTh.Name = "Thickness";
-			propTh.Value = 0.05;
+			propTh.Value = 0.02;
 
 			IdmCic.API.Model.Subsystems.Shape shape = ((Equipment)args.IdmObject).AddShape(IdmCic.API.Model.Physics.Objects3D.Object3dType.Step);
 			shape.Name = "NoseConeShape";
@@ -590,7 +638,7 @@ namespace RocketDesigner
 			var fileName = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\nosecone.STEP");
 			((IdmCic.API.Model.Physics.Objects3D.Miscs.Step)shape.ShapeDefinition).SetStepObjectFromFile(fileName);
 			shape.Position.SetPropertyFormula("Rotation2", "-90");
-			shape.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value]))");
+			//shape.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value]))");
 
 
 			CoordinateSystemDefinition sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
@@ -606,6 +654,10 @@ namespace RocketDesigner
 		}
 		private void FinsAddActionImpl(PluginObjectActionArgs args)
 		{
+			IdmCic.API.Model.IdmProperties.Property propType = ((Equipment)args.IdmObject).AddProperty("RocketFin", IdmCic.API.Model.IdmProperties.IdmPropertyType.Bool);
+			propType.Name = "RocketFin";
+			propType.Value = true;
+			propType.Hidden = true;
 
 			IdmCic.API.Model.IdmProperties.Property propH = ((Equipment)args.IdmObject).AddProperty("finH", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
 			propH.Name = "Height";
@@ -740,7 +792,6 @@ namespace RocketDesigner
 			if (propRadius is null || propHeight is null || noseCone.Shapes.First() is null)
 				return;
 
-
 			if (swinstalled)
 			{
 				updateSWNoseFile((double)propRadius.Value * 1000, (double)propHeight.Value * 1000, (double)propTh.Value * 1000);
@@ -775,38 +826,14 @@ namespace RocketDesigner
 
 			var myModelView = Part.ActiveView;
 
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-			Part.Extension.SelectByID2("D2@Esquisse1@Pièce5.SLDPRT", "DIMENSION", 2.25182822338028E-02, 4.27555022788384E-03, 0, false, 0, null, 0);
-			Part.ClearSelection2(true);
-			Part.Extension.SelectByID2("D2@Esquisse1@Pièce5.SLDPRT", "DIMENSION", 2.20759839343665E-02, 4.06914435481359E-03, 0, false, 0, null, 0);
-			Dimension myDimension = (Dimension)Part.Parameter("D2@Esquisse1");
-			myDimension.SystemValue = r * 0.001;
-
-			Part.ClearSelection2(true);
-			Part.SketchManager.InsertSketch(true);
-
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-			Part.Extension.SelectByID2("D1@Esquisse1@Pièce5.SLDPRT", "DIMENSION", 2.25182822338028E-02, 4.27555022788384E-03, 0, false, 0, null, 0);
-			Part.ClearSelection2(true);
-			Part.Extension.SelectByID2("D1@Esquisse1@Pièce5.SLDPRT", "DIMENSION", 2.20759839343665E-02, 4.06914435481359E-03, 0, false, 0, null, 0);
-			Dimension myDimension2 = (Dimension)Part.Parameter("D1@Esquisse1");
-			myDimension2.SystemValue = th * 0.001;
-
-			Part.ClearSelection2(true);
-			Part.SketchManager.InsertSketch(true);
-
 
 			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
 			Part.EditSketch();
 			Part.ClearSelection2(true);
 
-			Part.Extension.SelectByID2("Spline2", "SKETCHSEGMENT", 8.99265592656241E-03, 3.52640490662842E-03, 0, false, 0, null, 0);
+			Part.Extension.SelectByID2("Spline3", "SKETCHSEGMENT", 8.99265592656241E-03, 3.52640490662842E-03, 0, false, 0, null, 0);
 
-			Part.Extension.SelectByID2("Spline2", "SKETCHSEGMENT", 8.99265592656241E-03, 3.52640490662842E-03, 0, false, 0, null, 0);
+			Part.Extension.SelectByID2("Spline3", "SKETCHSEGMENT", 8.99265592656241E-03, 3.52640490662842E-03, 0, false, 0, null, 0);
 
 			ISelectionMgr mng = ((ISelectionMgr)Part.ISelectionManager);
 
@@ -816,18 +843,111 @@ namespace RocketDesigner
 			bool a, b, c;
 			//equationCurve.GetEquationParameters2(out x, out y, out z, out s, out e, out a, out aa, out bb, out cc, out b, out c);
 
-			equationCurve.SetEquationParameters2("", "(( (" + r * r + "+" + h * h + ")/(2*" + r + ") )^2-(" + h + "-x)^2)^(1/2) + " + r + " - ( (" + r * r + "+" + h * h + ")/(" + 2 * r + ") )", "", 0.0, h, false, 0, 0, 0, true, true);
+			equationCurve.SetEquationParameters2("", "(( (" + r * r + "+" + h * h + ")/(2*" + r + ") )^2-(" + h + "-x)^2)^(1/2) + " + r + " - (" + r * r + "+" + h * h + ")/(2*" + r + ")", "", 0.0, h, false, 0, 0, 0, false, false);
 
 
 
 			Part.ClearSelection2(true);
 			Part.SketchManager.InsertSketch(true);
 
-			equationCurve.GetEquationParameters2(out x, out y, out z, out s, out e, out a, out aa, out bb, out cc, out b, out c);
+
+			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+			Part.EditSketch();
+			Part.ClearSelection2(true);
+
+			Part.Extension.SelectByID2("Spline8", "SKETCHSEGMENT", 8.99265592656241E-03, 3.52640490662842E-03, 0, false, 0, null, 0);
+
+			Part.Extension.SelectByID2("Spline8", "SKETCHSEGMENT", 8.99265592656241E-03, 3.52640490662842E-03, 0, false, 0, null, 0);
+
+			mng = ((ISelectionMgr)Part.ISelectionManager);
+
+			equationCurve = (SketchSpline)mng.GetSelectedObject6(1, -1);
+
+			//equationCurve.GetEquationParameters2(out x, out y, out z, out s, out e, out a, out aa, out bb, out cc, out b, out c);
+
+			equationCurve.SetEquationParameters2("", "(( (" + r * r + "+" + h * h + ")/(2*" + r + ") )^2-(" + h + "-x)^2)^(1/2) + " + r + " - (" + r * r + "+" + h * h + ")/(2*" + r + ")", "", 0.0, h - th, false, 0, 0, 0, false, false);
+
+
+
+			
+
+
+
+			
+
+			Part.ClearSelection2(true);
+			Part.SketchManager.InsertSketch(true);
+
+			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+			Part.EditSketch();
+			Part.ClearSelection2(true);
+			Part.Extension.SelectByID2("D2@Esquisse1@Pièce54.SLDPRT", "DIMENSION", 2.25182822338028E-02, 4.27555022788384E-03, 0, false, 0, null, 0);
+			Part.ClearSelection2(true);
+			Part.Extension.SelectByID2("D2@Esquisse1@Pièce54.SLDPRT", "DIMENSION", 2.20759839343665E-02, 4.06914435481359E-03, 0, false, 0, null, 0);
+			Dimension myDimension6 = (Dimension)Part.Parameter("D2@Esquisse1");
+			myDimension6.SystemValue = h * 0.001;
+
+			Part.ClearSelection2(true);
+			Part.SketchManager.InsertSketch(true);
+
+
+			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+			Part.EditSketch();
+			Part.ClearSelection2(true);
+			Part.Extension.SelectByID2("D3@Esquisse1@Pièce54.SLDPRT", "DIMENSION", 2.25182822338028E-02, 4.27555022788384E-03, 0, false, 0, null, 0);
+			Part.ClearSelection2(true);
+			Part.Extension.SelectByID2("D3@Esquisse1@Pièce54.SLDPRT", "DIMENSION", 2.20759839343665E-02, 4.06914435481359E-03, 0, false, 0, null, 0);
+			Dimension myDimension3 = (Dimension)Part.Parameter("D3@Esquisse1");
+			myDimension3.SystemValue = (r-th) * 0.001;
+
+			Part.ClearSelection2(true);
+			Part.SketchManager.InsertSketch(true);
+			/*
+			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+			Part.EditSketch();
+			Part.ClearSelection2(true);
+			Part.Extension.SelectByID2("D6@Esquisse1@Pièce54.SLDPRT", "DIMENSION", 2.25182822338028E-02, 4.27555022788384E-03, 0, false, 0, null, 0);
+			Part.ClearSelection2(true);
+			Part.Extension.SelectByID2("D6@Esquisse1@Pièce54.SLDPRT", "DIMENSION", 2.20759839343665E-02, 4.06914435481359E-03, 0, false, 0, null, 0);
+			Dimension myDimension4 = (Dimension)Part.Parameter("D6@Esquisse1");
+			double rho = (r * r + h * h) / (2 * r);
+			myDimension4.SystemValue = Math.Atan2(h,Math.Sqrt(rho*rho-h*h)) - 0.087;
+
+			Part.ClearSelection2(true);
+			Part.SketchManager.InsertSketch(true);
+			*/
+
+			
+
+
+			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+			Part.EditSketch();
+			Part.ClearSelection2(true);
+			Part.Extension.SelectByID2("D1@Esquisse1@Pièce54.SLDPRT", "DIMENSION", 2.25182822338028E-02, 4.27555022788384E-03, 0, false, 0, null, 0);
+			Part.ClearSelection2(true);
+			Part.Extension.SelectByID2("D1@Esquisse1@Pièce54.SLDPRT", "DIMENSION", 2.20759839343665E-02, 4.06914435481359E-03, 0, false, 0, null, 0);
+			Dimension myDimension = (Dimension)Part.Parameter("D1@Esquisse1");
+			myDimension.SystemValue = r * 0.001;
+
+			Part.ClearSelection2(true);
+			Part.SketchManager.InsertSketch(true);
+
+			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+			Part.EditSketch();
+			Part.ClearSelection2(true);
+			Part.Extension.SelectByID2("D4@Esquisse1@Pièce54.SLDPRT", "DIMENSION", 2.25182822338028E-02, 4.27555022788384E-03, 0, false, 0, null, 0);
+			Part.ClearSelection2(true);
+			Part.Extension.SelectByID2("D4@Esquisse1@Pièce54.SLDPRT", "DIMENSION", 2.20759839343665E-02, 4.06914435481359E-03, 0, false, 0, null, 0);
+			Dimension myDimension2 = (Dimension)Part.Parameter("D4@Esquisse1");
+			myDimension2.SystemValue = (h - th) * 0.001;
+
+			Part.ClearSelection2(true);
+			Part.SketchManager.InsertSketch(true); 
+
 
 			fileName = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\nosecone2.STEP");
 			Part.SaveAs3(fileName, 0, 2);
-
+			swApp.CloseDoc("nosecone.SLDPRT");
 
 		}
 
@@ -863,7 +983,7 @@ namespace RocketDesigner
 
 			foreach (IdmCic.API.Model.Subsystems.Assembly e in ss.Assemblies.ToList())
 			{
-				if (e.Name == "Rocket")
+				if (e.GetProperty("Rocket") != null)
 				{
 					rocket = e;
 				}
@@ -876,13 +996,13 @@ namespace RocketDesigner
 			foreach (EquipmentInstance ei in rocket.EquipmentInstances.ToList())
 			{
 				Equipment e = ei.Equipment;
-				if (e.Name.Contains("RocketBody"))
+				if (e.GetProperty("RocketBody") != null)
 				{
 					Body b = new Body((double)e.GetProperty("bodyH").Value, (double)e.GetProperty("bodyFinPos").Value, (double)e.GetProperty("bodyR").Value);
 					b.Name = e.Name;
 					r.addElement(b);
 				}
-				else if (e.Name.Contains("RocketFin"))
+				else if (e.GetProperty("RocketFin") != null)
 				{
 					double sweep = ((double)e.GetProperty("finh").Value) / Math.Tan((double)e.GetProperty("finA1").Value * Math.PI / 180);
 
@@ -892,14 +1012,14 @@ namespace RocketDesigner
 					fi.Name = e.Name;
 					r.addElement(fi);
 				}
-				else if (e.Name.Contains("RocketNoseCone"))
+				else if (e.GetProperty("RocketNoseCone") != null)
 				{
 					Nosecone n = new Nosecone(Nosecone.NoseConeShape.Tangent, (double)e.GetProperty("noseconeH").Value, (double)e.GetProperty("noseconeR").Value, 0);
 					n.Name = e.Name;
 					r.addElement(n);
 					r.setNose(n);
 				}
-				else if (e.Name.Contains("RocketTransition"))
+				else if (e.GetProperty("RocketTransition") != null)
 				{
 					Transition tr = new Transition((double)e.GetProperty("transiH").Value, (double)e.GetProperty("transiTopR").Value, (double)e.GetProperty("transiBotR").Value);
 					tr.Name = e.Name;
@@ -911,7 +1031,7 @@ namespace RocketDesigner
 				try
 				{
 					RocketElement el1 = r.getElement(ei.Equipment.Name);
-					if (ei.Equipment.Name.Contains("NoseCone"))
+					if (typeof(Nosecone).IsInstanceOfType(el1))
 						continue;
 					if (typeof(Fin).IsInstanceOfType(el1))
 					{
