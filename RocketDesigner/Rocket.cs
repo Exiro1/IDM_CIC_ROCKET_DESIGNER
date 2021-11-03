@@ -1,4 +1,5 @@
-﻿using IdmCic.API.Model.Subsystems;
+﻿using IdmCic.API.Model.Mainsystem;
+using IdmCic.API.Model.Subsystems;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -49,7 +50,7 @@ namespace RocketDesigner
 
 		public string generateXMLFile(string name)
 		{
-			string filename = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\"+name+".CDX1");
+			string filename = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\" + name + ".CDX1");
 			XmlTextWriter xmlTextWriter2 = new XmlTextWriter(filename, null);
 
 
@@ -64,12 +65,12 @@ namespace RocketDesigner
 
 			RocketElement e = nose;
 			e.WriteToXML(xmlTextWriter2);
-			while(e.Bot != null)
+			while (e.Bot != null)
 			{
 				e = e.Bot;
 				e.WriteToXML(xmlTextWriter2);
 			}
-		
+
 			//OTHER
 			xmlTextWriter2.WriteElementString("Surface", "Sheet Metal");
 			xmlTextWriter2.WriteElementString("CP", "0");
@@ -116,8 +117,90 @@ namespace RocketDesigner
 
 		}
 
+		internal static Rocket getRocketFromElement(RelatedSubsystem ss)
+		{
+
+			IdmCic.API.Model.Subsystems.Assembly rocket = null;
 
 
+			foreach (IdmCic.API.Model.Subsystems.Assembly e in ss.Assemblies.ToList())
+			{
+				if (e.GetProperty("Rocket") != null)
+				{
+					rocket = e;
+				}
+			}
+			if (rocket is null)
+				return null;
+
+			Rocket r = new Rocket();
+
+			foreach (EquipmentInstance ei in rocket.EquipmentInstances.ToList())
+			{
+				Equipment e = ei.Equipment;
+				if (e.GetProperty("RocketBody") != null)
+				{
+					Body b = new Body((double)e.GetProperty("bodyH").Value, (double)e.GetProperty("bodyFinPos").Value, (double)e.GetProperty("bodyR").Value);
+					b.Name = e.Name;
+					r.addElement(b);
+				}
+				else if (e.GetProperty("RocketFin") != null)
+				{
+					double sweep = ((double)e.GetProperty("finh").Value) / Math.Tan((double)e.GetProperty("finA1").Value * Math.PI / 180);
+
+					double invsweep = ((double)e.GetProperty("finh").Value) / Math.Tan((180 - (double)e.GetProperty("finA2").Value) * Math.PI / 180);
+
+					Fin fi = new Fin((double)e.GetProperty("finl").Value, (double)e.GetProperty("finh").Value, sweep, (double)e.GetProperty("finl").Value - sweep - invsweep, (double)e.GetProperty("finth").Value, 0, 1, 1, "Hexagonal", 0);
+					fi.Name = e.Name;
+					r.addElement(fi);
+				}
+				else if (e.GetProperty("RocketNoseCone") != null)
+				{
+					Nosecone n = new Nosecone(Nosecone.NoseConeShape.Tangent, (double)e.GetProperty("noseconeH").Value, (double)e.GetProperty("noseconeR").Value, 0);
+					n.Name = e.Name;
+					r.addElement(n);
+					r.setNose(n);
+				}
+				else if (e.GetProperty("RocketTransition") != null)
+				{
+					Transition tr = new Transition((double)e.GetProperty("transiH").Value, (double)e.GetProperty("transiTopR").Value, (double)e.GetProperty("transiBotR").Value);
+					tr.Name = e.Name;
+					r.addElement(tr);
+				}
+			}
+			foreach (EquipmentInstance ei in rocket.EquipmentInstances.ToList())
+			{
+				try
+				{
+					RocketElement el1 = r.getElement(ei.Equipment.Name);
+					if (typeof(Nosecone).IsInstanceOfType(el1))
+						continue;
+					if (typeof(Fin).IsInstanceOfType(el1))
+					{
+						string attachedTo = ((EquipmentInstance)ei.ParentCoordinateSystem.Parent).Equipment.Name;
+						RocketElement el2 = r.getElement(attachedTo);
+						el2.addSideAttach(el1);
+					}
+					else
+					{
+						string attachedTo = ((EquipmentInstance)ei.ParentCoordinateSystem.Parent).Equipment.Name;
+						RocketElement el2 = r.getElement(attachedTo);
+						el1.Top = el2;
+						el2.Bot = el1;
+					}
+				}
+				catch (Exception e)
+				{
+
+				}
+			}
+			RocketElement el = r.getNosecone();
+			while (el.Bot != null)
+			{
+				el.Bot.Loc = el.Loc + el.Len;
+				el = el.Bot;
+			}
+			return r;
+		}
 	}
-
 }

@@ -25,7 +25,7 @@ namespace RocketDesigner
 {
 
 
-	public class ExemplePlugin : AbstractPlugin
+	public class Main : AbstractPlugin
 	{
 
 		private bool swinstalled = false;
@@ -87,10 +87,11 @@ namespace RocketDesigner
 
 		Excel.Workbook aero;
 		SolidWorks.Interop.sldworks.SldWorks swApp;
+		Aerodynamics aerodynamics;
 
 		public override void Initialise()
 		{
-
+			aerodynamics = new Aerodynamics();
 			calculateAero = new PluginAction("calculateAero", calculateAeroImpl);
 			openRas = new PluginAction("openRas", openRASImpl);
 			testCheck = new PluginAction("test_action", calculateAeroImpl);
@@ -111,7 +112,7 @@ namespace RocketDesigner
 			using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
 			using (var key = hklm.OpenSubKey(@"Software\SolidWorks"))
 			{
-				if (key == null)
+				if (key == null || true)
 				{
 					// Doesn't exist...
 					MessageBox.Show("Solidwoks n'est pas installé, certaines fonctionnalitées de " + Name + " ne seront pas disponible");
@@ -151,8 +152,6 @@ namespace RocketDesigner
 			AssemblyAddButton = new PluginObjectButton("assembly_add_button", "Set As Rocket Assembly", AssemblyAddAction);
 		}
 
-
-
 		public override object MainSystemLoaded(MainSystem system)
 		{
 
@@ -163,20 +162,17 @@ namespace RocketDesigner
 		}
 
 		private void System_OnPropertyChanged(ModelEventInfo info)
-		{// detect the change on all equipments'name property
+		{
 			if (info.Dispatcher is IdmCic.API.Model.IdmProperties.Property && info.PropertyName == "Value" && (info.Dispatcher.Id == "noseconeH" || info.Dispatcher.Id == "noseconeR" || info.Dispatcher.Id == "noseconeTh"))
 			{
 				updateNoseCone((Equipment)info.Dispatcher.Parent, info);
 			}
 			if (info.Dispatcher is IdmCic.API.Model.IdmProperties.Property && info.PropertyName == "Value" && (info.Dispatcher.Id == "mach"))
 			{
-				updateCP((Assembly)info.Dispatcher.Parent);
+				aerodynamics.updateCP((Assembly)info.Dispatcher.Parent);
 			}
 		}
 
-		//_GetCog()_z
-		//((RelatedSubsystem)info.Dispatcher.Parent.Parent).Assemblies.First().GetFullPropertyName("GetCog()_z")
-		//"el.1_ss.STR_ass.7_GetCog()_z"
 		public string updateRocketXML(MainSystem mainSystem)
 		{
 			string fileCreated = "";
@@ -185,7 +181,7 @@ namespace RocketDesigner
 				foreach (RelatedSubsystem s in e.RelatedSubsystems)
 				{
 
-					Rocket r = getRocketFromElement(s);
+					Rocket r = Rocket.getRocketFromElement(s);
 					if (r != null)
 					{
 						string filec = r.generateXMLFile(e.Name.Replace(" ", ""));
@@ -198,9 +194,6 @@ namespace RocketDesigner
 			}
 			return fileCreated;
 		}
-
-
-		// Implementation of the action:
 
 		public void openRASImpl(PluginActionArgs args)
 		{
@@ -287,7 +280,7 @@ namespace RocketDesigner
 								{
 									if (coord.Name == "CP")
 									{
-										updateCP(assemb);
+										aerodynamics.updateCP(assemb);
 										ex = true;
 									}
 								}
@@ -295,7 +288,7 @@ namespace RocketDesigner
 								{
 									CoordinateSystemDefinition cp = assemb.AddCoordinateSystem();
 									cp.Name = "CP";
-									updateCP(assemb);
+									aerodynamics.updateCP(assemb);
 								}
 
 
@@ -313,68 +306,7 @@ namespace RocketDesigner
 
 		}
 
-		public void updateCP(Assembly assemb)
-		{
-			double dist = 0;
-			if (assemb.GetProperty("mach") != null)
-				dist = getCP(double.Parse(assemb.GetProperty("mach").Value.ToString()));
-			foreach (CoordinateSystemDefinition coord in assemb.CoordinateSystems)
-			{
-				if (coord.Name == "CP")
-				{
-					coord.Position.SetPropertyFormula("Z", "mm_m(" + (dist * 1000).ToString().Replace(",", ".") + ")");
-				}
-			}
-			staticMargin(assemb);
-		}
-		public void staticMargin(Assembly assemb)
-		{
-			Microsoft.Office.Interop.Excel.Application app = (Excel.Application)System.Runtime.InteropServices.Marshal.GetActiveObject("Excel.Application");
-			Excel.Workbook wb = app.ActiveWorkbook;
-			try
-			{
-				Worksheet worksheet = (Worksheet)wb.Worksheets["ras2"];
-				
-				((Range)worksheet.Cells[1, 17]).FormulaR1C1 = "Marge Statique";
-				((Range)worksheet.Cells[2, 17]).Select();
-				app.ActiveCell.FormulaR1C1 = "=((RC[-4]/39)*1000) - @IdmGet(\""+ assemb.GetFullPropertyName("GetCog()_z") + "\")";
-				app.ActiveCell.AutoFill(worksheet.Range["Q2","Q1001"], XlAutoFillType.xlFillDefault);
-
-				worksheet.Shapes.AddChart2(227, XlChartType.xlLine).Name = "Marge Statique";
-				((Excel.ChartObject) worksheet.ChartObjects("Marge Statique")).Activate();
-				((Series)app.ActiveChart.FullSeriesCollection(1)).Name = "='ras2'!$Q$1";
-				((Series)app.ActiveChart.FullSeriesCollection(1)).Values = "='ras2'!$Q$2:$Q$1001";
-				((Series)app.ActiveChart.FullSeriesCollection(1)).XValues = "='ras2'!$A$2:$A$1001";
-				((Range)worksheet.Cells[1, 1]).Select();
-
-			}
-			catch (Exception er)
-			{
-
-			}
-		}
-
-		public double getCP(Double mach)
-		{
-			Microsoft.Office.Interop.Excel.Application app = (Excel.Application)System.Runtime.InteropServices.Marshal.GetActiveObject("Excel.Application");
-			Excel.Workbook wb = app.ActiveWorkbook;
-			try
-			{
-				Worksheet worksheet = (Worksheet)wb.Worksheets["ras2"];
-
-				mach = Math.Round(mach * 100);
-				int row = Math.Min(Math.Max(1, (int)mach), 2500);
-				string cp = ((Range)worksheet.Cells[1 + row, 13]).FormulaLocal.ToString();
-				return toMeter(Double.Parse(cp));
-			}
-			catch (Exception er)
-			{
-
-			}
-
-			return 0;
-
-		}
+		
 
 
 
@@ -409,6 +341,9 @@ namespace RocketDesigner
 
 		private void AssemblyAddActionImpl(PluginObjectActionArgs args)
 		{
+			if (!typeof(Assembly).IsInstanceOfType(args.IdmObject))
+					return;
+
 			Assembly ass = ((Assembly)args.IdmObject);
 
 			ass.Name = "Rocket";
@@ -437,6 +372,21 @@ namespace RocketDesigner
 
 
 		}
+		private string getNewID(RelatedSubsystem ss, string part)
+		{
+			int id = 0;
+			foreach (Equipment ekip in ss.Equipments)
+			{
+				if (ekip.Name.Contains(part))
+				{
+					int lid = -1;
+					int.TryParse(ekip.Name.Replace(part, ""), out lid);
+					if (id == lid)
+						id++;
+				}
+			}
+			return part + id;
+		}
 
 		private void TransitionAddActionImpl(PluginObjectActionArgs args)
 		{
@@ -463,6 +413,9 @@ namespace RocketDesigner
 			propTh.Name = "Thickness";
 			propTh.Value = 0.02;
 
+			if (((Equipment)args.IdmObject).Shapes.Count > 0)
+				return;
+
 			IdmCic.API.Model.Subsystems.Shape shape = ((Equipment)args.IdmObject).AddShape(IdmCic.API.Model.Physics.Objects3D.Object3dType.HollowCone);
 			shape.Name = "TransiShape";
 
@@ -483,8 +436,6 @@ namespace RocketDesigner
 			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm(0))");
 
 		}
-
-
 		private void BodyAddActionImpl(PluginObjectActionArgs args)
 		{
 
@@ -508,6 +459,9 @@ namespace RocketDesigner
 			IdmCic.API.Model.IdmProperties.Property propLoc = ((Equipment)args.IdmObject).AddProperty("bodyFinPos", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
 			propLoc.Name = "Fin Pos";
 			propLoc.Value = 0.00;
+
+			if (((Equipment)args.IdmObject).Shapes.Count > 0)
+				return;
 
 			IdmCic.API.Model.Subsystems.Shape shape = ((Equipment)args.IdmObject).AddShape(IdmCic.API.Model.Physics.Objects3D.Object3dType.HollowCylinder);
 			shape.Name = "BodyShape";
@@ -593,23 +547,6 @@ namespace RocketDesigner
 
 
 		}
-
-		private string getNewID(RelatedSubsystem ss, string part)
-		{
-			int id = 0;
-			foreach (Equipment ekip in ss.Equipments)
-			{
-				if (ekip.Name.Contains(part))
-				{
-					int lid = -1;
-					int.TryParse(ekip.Name.Replace(part, ""), out lid);
-					if (id == lid)
-						id++;
-				}
-			}
-			return part + id;
-		}
-
 		private void NoseConeAddActionImpl(PluginObjectActionArgs args)
 		{
 
@@ -628,11 +565,17 @@ namespace RocketDesigner
 			propTh.Name = "Thickness";
 			propTh.Value = 0.02;
 
+			((Equipment)args.IdmObject).Name = getNewID((RelatedSubsystem)((Equipment)args.IdmObject).Parent, "RocketNoseCone");
+
+			if (((Equipment)args.IdmObject).Shapes.Count > 0)
+				return;
+
 			IdmCic.API.Model.Subsystems.Shape shape = ((Equipment)args.IdmObject).AddShape(IdmCic.API.Model.Physics.Objects3D.Object3dType.Step);
 			shape.Name = "NoseConeShape";
 
 
-			((Equipment)args.IdmObject).Name = getNewID((RelatedSubsystem)((Equipment)args.IdmObject).Parent, "RocketNoseCone");
+			
+
 
 
 			var fileName = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\nosecone.STEP");
@@ -682,7 +625,8 @@ namespace RocketDesigner
 			propLen.Value = 1200 * 0.001;
 
 
-
+			if (((Equipment)args.IdmObject).Shapes.Count > 0)
+				return;
 
 			IdmCic.API.Model.Subsystems.Shape shape = ((Equipment)args.IdmObject).AddShape(IdmCic.API.Model.Physics.Objects3D.Object3dType.Topology);
 			shape.Name = "RocketFinShape";
@@ -778,7 +722,6 @@ namespace RocketDesigner
 
 		}
 
-		#region NoseCone
 
 		public void updateNoseCone(Equipment noseCone, ModelEventInfo info)
 		{
@@ -811,7 +754,6 @@ namespace RocketDesigner
 				}
 			}
 		}
-
 		public void updateSWNoseFile(double r, double h, double th)
 		{
 
@@ -952,10 +894,6 @@ namespace RocketDesigner
 		}
 
 
-		#endregion
-
-
-
 
 		/*
 		public void test(MainSystem syst)
@@ -973,104 +911,6 @@ namespace RocketDesigner
 		{
 			return Math.Round(inch / 39.3701, 3);
 		}
-
-
-		public Rocket getRocketFromElement(RelatedSubsystem ss)
-		{
-
-			IdmCic.API.Model.Subsystems.Assembly rocket = null;
-
-
-			foreach (IdmCic.API.Model.Subsystems.Assembly e in ss.Assemblies.ToList())
-			{
-				if (e.GetProperty("Rocket") != null)
-				{
-					rocket = e;
-				}
-			}
-			if (rocket is null)
-				return null;
-
-			Rocket r = new Rocket();
-
-			foreach (EquipmentInstance ei in rocket.EquipmentInstances.ToList())
-			{
-				Equipment e = ei.Equipment;
-				if (e.GetProperty("RocketBody") != null)
-				{
-					Body b = new Body((double)e.GetProperty("bodyH").Value, (double)e.GetProperty("bodyFinPos").Value, (double)e.GetProperty("bodyR").Value);
-					b.Name = e.Name;
-					r.addElement(b);
-				}
-				else if (e.GetProperty("RocketFin") != null)
-				{
-					double sweep = ((double)e.GetProperty("finh").Value) / Math.Tan((double)e.GetProperty("finA1").Value * Math.PI / 180);
-
-					double invsweep = ((double)e.GetProperty("finh").Value) / Math.Tan((180 - (double)e.GetProperty("finA2").Value) * Math.PI / 180);
-
-					Fin fi = new Fin((double)e.GetProperty("finl").Value, (double)e.GetProperty("finh").Value, sweep, (double)e.GetProperty("finl").Value - sweep - invsweep, (double)e.GetProperty("finth").Value, 0, 1, 1, "Hexagonal", 0);
-					fi.Name = e.Name;
-					r.addElement(fi);
-				}
-				else if (e.GetProperty("RocketNoseCone") != null)
-				{
-					Nosecone n = new Nosecone(Nosecone.NoseConeShape.Tangent, (double)e.GetProperty("noseconeH").Value, (double)e.GetProperty("noseconeR").Value, 0);
-					n.Name = e.Name;
-					r.addElement(n);
-					r.setNose(n);
-				}
-				else if (e.GetProperty("RocketTransition") != null)
-				{
-					Transition tr = new Transition((double)e.GetProperty("transiH").Value, (double)e.GetProperty("transiTopR").Value, (double)e.GetProperty("transiBotR").Value);
-					tr.Name = e.Name;
-					r.addElement(tr);
-				}
-			}
-			foreach (EquipmentInstance ei in rocket.EquipmentInstances.ToList())
-			{
-				try
-				{
-					RocketElement el1 = r.getElement(ei.Equipment.Name);
-					if (typeof(Nosecone).IsInstanceOfType(el1))
-						continue;
-					if (typeof(Fin).IsInstanceOfType(el1))
-					{
-						string attachedTo = ((EquipmentInstance)ei.ParentCoordinateSystem.Parent).Equipment.Name;
-						RocketElement el2 = r.getElement(attachedTo);
-						el2.addSideAttach(el1);
-					}
-					else
-					{
-						string attachedTo = ((EquipmentInstance)ei.ParentCoordinateSystem.Parent).Equipment.Name;
-						RocketElement el2 = r.getElement(attachedTo);
-						el1.Top = el2;
-						el2.Bot = el1;
-					}
-				}
-				catch (Exception e)
-				{
-
-				}
-			}
-			RocketElement el = r.getNosecone();
-			while (el.Bot != null)
-			{
-				el.Bot.Loc = el.Loc + el.Len;
-				el = el.Bot;
-			}
-			return r;
-		}
-
-
-
-
-
-
-
-
-
-
-
 
 	}
 
