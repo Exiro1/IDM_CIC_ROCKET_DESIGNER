@@ -4,19 +4,14 @@ using IdmCic.API.Utils.Plugins;
 using Excel = Microsoft.Office.Interop.Excel;
 using SolidWorks.Interop.sldworks;
 
-using System.Reflection;
 using IdmCic.API.Model.Subsystems;
 using IdmCic.API.Model.Mainsystem;
 using IdmCic.API.Utils.Events;
-using System.Runtime.InteropServices.ComTypes;
-using System.Runtime.InteropServices;
 using System.Linq;
-using Microsoft.Vbe.Interop;
 using System.Diagnostics;
 using System.IO;
 using IdmCic.API.Model.Physics.TopologicalOperations;
 using IdmCic.API.Model.Physics.Objects3D.Solids;
-using System.Xml;
 using Microsoft.Win32;
 using IdmCic.API.Model.Physics;
 using Microsoft.Office.Interop.Excel;
@@ -34,10 +29,12 @@ namespace RocketDesigner
 
 		private PluginAction calculateAero;
 		private PluginAction openRas;
+		private PluginAction create2D;
 		private PluginAction testCheck;
 
 		private PluginButton calculateAeroBtn;
 		private PluginButton OpenRASBtn;
+		private PluginButton create2DBtn;
 		private PluginCheckBox checkbox;
 
 		private PluginObjectAction NoseConeAddAction;
@@ -96,11 +93,12 @@ namespace RocketDesigner
 			aerodynamics = new Aerodynamics();
 			calculateAero = new PluginAction("calculateAero", calculateAeroImpl);
 			openRas = new PluginAction("openRas", openRASImpl);
+			create2D = new PluginAction("create2d", create2DImpl);
 			testCheck = new PluginAction("test_action", calculateAeroImpl);
 
 			calculateAeroBtn = new PluginButton("calculateAero_button", "Calculate aero coef", calculateAero, "Rocket Designer", "Aerodynamics");
 			OpenRASBtn = new PluginButton("openRas_button", "Open RASAero II", openRas, "Rocket Designer", "Aerodynamics");
-
+			create2DBtn = new PluginButton("create2d_button", "Create 2D Sketch", create2D, "Rocket Designer", "Aerodynamics");
 			checkbox = new PluginCheckBox("test", "test", testCheck, "Rocket Designer", "test");
 			//IdmCic_tab
 			calculateAeroBtn.IsVisibleAtStartUp = true;
@@ -110,6 +108,10 @@ namespace RocketDesigner
 			OpenRASBtn.IsVisibleAtStartUp = true;
 			OpenRASBtn.IsVisibleAfterLoadingMainSystem = true;
 			OpenRASBtn.LargeStyle = true;
+
+			create2DBtn.IsVisibleAtStartUp = true;
+			create2DBtn.IsVisibleAfterLoadingMainSystem = true;
+			create2DBtn.LargeStyle = true;
 
 			using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
 			using (var key = hklm.OpenSubKey(@"Software\SolidWorks"))
@@ -214,9 +216,26 @@ namespace RocketDesigner
 			p.StartInfo.Arguments = filename;
 			p.Start();
 
-			
+		}
+
+		public void create2DImpl(PluginActionArgs args)
+		{
+				foreach (Element e in args.MainSystem.Elements)
+				{
+					foreach (RelatedSubsystem s in e.RelatedSubsystems)
+					{
+
+						Rocket r = Rocket.getRocketFromElement(s);
+						if (r != null)
+						{
+							string filec = r.generateXMLFile(e.Name.Replace(" ", ""));
+							create2DSketch(r);
+						}
+					}
+				}
 
 		}
+
 
 		private void calculateAeroImpl(PluginActionArgs args)
 		{
@@ -320,6 +339,7 @@ namespace RocketDesigner
 			yield return calculateAero;
 			yield return testCheck;
 			yield return openRas;
+			yield return create2D;
 		}
 		// Expose the control to the Hosting application
 		public override System.Collections.Generic.IEnumerable<PluginControl> GetControls()
@@ -327,6 +347,7 @@ namespace RocketDesigner
 			yield return calculateAeroBtn;
 			yield return checkbox;
 			yield return OpenRASBtn;
+			yield return create2DBtn;
 		}
 
 		public override void ApplicationQuit()
@@ -975,6 +996,7 @@ namespace RocketDesigner
 			x = h * 0.001;
 			y = r * 0.001;
 
+			bool fins = true;
 
 			RocketElement e = rocket.getNosecone();
 			
@@ -983,7 +1005,29 @@ namespace RocketDesigner
 				e = e.Bot;
 				if (typeof(Body).IsInstanceOfType(e))
 				{
-					createBody(ref x, ref y, (int)(((Body) e).Len*1000), (int)(((Body)e).radius*1000), Part, ref pnbr, ref dimnbr);
+
+					if (fins && e.SideAttach.Count>0)
+					{
+						int subbody = (int)((((Body)e).Len - ((Fin)e.SideAttach.First()).chord - ((Body)e).finLoc) * 1000);
+
+						int finTE = (int)((((Fin)e.SideAttach.First()).chord - ((Fin)e.SideAttach.First()).sweepDist - ((Fin)e.SideAttach.First()).TipChord) * 1000);
+						//int subbody = (int)((((Body)e).Len - ((Fin)e.SideAttach.First()).chord - ((Fin)e.SideAttach.First()).Loc) * 1000);
+
+
+						createBody(ref x, ref y, subbody, (int)(((Body)e).radius * 1000), Part, ref pnbr, ref dimnbr);
+						createBody(ref x, ref y, (int)(((Fin)e.SideAttach.First()).sweepDist * 1000), (int) ( (((Fin)e.SideAttach.First()).span + ((Body)e).radius) * 1000), Part, ref pnbr, ref dimnbr);
+						createBody(ref x, ref y, (int)(((Fin)e.SideAttach.First()).TipChord * 1000), (int)((((Fin)e.SideAttach.First()).span + ((Body)e).radius) * 1000), Part, ref pnbr, ref dimnbr);
+						createBody(ref x, ref y, finTE, (int)(((Body)e).radius * 1000), Part, ref pnbr, ref dimnbr);
+						if (((Body)e).finLoc != 0){
+							createBody(ref x, ref y, (int)(((Body)e).finLoc * 1000), (int)(((Body)e).radius * 1000), Part, ref pnbr, ref dimnbr);
+						}
+					}
+					else
+					{
+						createBody(ref x, ref y, (int)(((Body)e).Len * 1000), (int)(((Body)e).radius * 1000), Part, ref pnbr, ref dimnbr);
+					}
+						
+
 				}
 				if (typeof(Transition).IsInstanceOfType(e))
 				{
@@ -1009,8 +1053,12 @@ namespace RocketDesigner
 			}
 		}
 
+
+
+
 		public void createBody(ref double x, ref double y, int h, int r, SolidWorks.Interop.sldworks.ModelDoc2 Part, ref int pointNbr, ref int dimNbr)
 		{
+			Dimension myDimension;
 			Part.Extension.SelectByID2("Esquisse", "SKETCH", 0, 0, 0, false, 0, null, 0);
 			Part.EditSketch();
 			Part.ClearSelection2(true);
@@ -1031,13 +1079,14 @@ namespace RocketDesigner
 			{
 				Part.Extension.SelectByID2("Point" + (pointNbr - 1), "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
 			}
-
-			Part.AddHorizontalDimension2(h * 0.001, 0, 0);
-			Dimension myDimension = (Dimension)Part.Parameter("D" + dimNbr + "@Esquisse");
-			myDimension.SystemValue = h * 0.001;
-			dimNbr++;
+			if (h != 0)
+			{
+				Part.AddHorizontalDimension2(Math.Abs(h) * 0.001, 0, 0);
+				myDimension = (Dimension)Part.Parameter("D" + dimNbr + "@Esquisse");
+				myDimension.SystemValue = Math.Abs(h) * 0.001;
+				dimNbr++;
+			}
 			Part.ClearSelection2(true);
-
 			Part.Extension.SelectByID2("Point" + pointNbr, "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
 			Part.Extension.SelectByID2("Point3", "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
 			Part.AddVerticalDimension2(r * 0.001, 0, 0);
@@ -1053,6 +1102,8 @@ namespace RocketDesigner
 			y = r * 0.001;
 
 		}
+
+
 
 		public void endRocket(ref double x, ref double y, SolidWorks.Interop.sldworks.ModelDoc2 Part, ref int pointNbr, ref int dimNbr)
 		{
