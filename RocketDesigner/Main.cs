@@ -3,6 +3,7 @@ using System.Windows.Forms;
 using IdmCic.API.Utils.Plugins;
 using Excel = Microsoft.Office.Interop.Excel;
 using SolidWorks.Interop.sldworks;
+
 using System.Reflection;
 using IdmCic.API.Model.Subsystems;
 using IdmCic.API.Model.Mainsystem;
@@ -20,6 +21,7 @@ using Microsoft.Win32;
 using IdmCic.API.Model.Physics;
 using Microsoft.Office.Interop.Excel;
 using Assembly = IdmCic.API.Model.Subsystems.Assembly;
+using SolidWorks.Interop.swconst;
 
 namespace RocketDesigner
 {
@@ -96,8 +98,8 @@ namespace RocketDesigner
 			openRas = new PluginAction("openRas", openRASImpl);
 			testCheck = new PluginAction("test_action", calculateAeroImpl);
 
-			calculateAeroBtn = new PluginButton("calculateAero_button", "Calculate aero coef", calculateAero, "Rocket Designer", "Utils");
-			OpenRASBtn = new PluginButton("openRas_button", "Open RASAero II", openRas, "Rocket Designer", "Utils");
+			calculateAeroBtn = new PluginButton("calculateAero_button", "Calculate aero coef", calculateAero, "Rocket Designer", "Aerodynamics");
+			OpenRASBtn = new PluginButton("openRas_button", "Open RASAero II", openRas, "Rocket Designer", "Aerodynamics");
 
 			checkbox = new PluginCheckBox("test", "test", testCheck, "Rocket Designer", "test");
 			//IdmCic_tab
@@ -112,7 +114,7 @@ namespace RocketDesigner
 			using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
 			using (var key = hklm.OpenSubKey(@"Software\SolidWorks"))
 			{
-				if (key == null || true)
+				if (key == null)
 				{
 					// Doesn't exist...
 					MessageBox.Show("Solidwoks n'est pas installé, certaines fonctionnalitées de " + Name + " ne seront pas disponible");
@@ -185,7 +187,7 @@ namespace RocketDesigner
 					if (r != null)
 					{
 						string filec = r.generateXMLFile(e.Name.Replace(" ", ""));
-
+						create2DSketch(r);
 						System.IO.File.Copy(filec, Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\ras.CDX1"), true);
 
 						fileCreated = fileCreated + filec + ";";
@@ -203,7 +205,6 @@ namespace RocketDesigner
 			var filename = files.Split(';')[0];
 
 
-
 			string assemblyFolder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 			string exefile = Path.Combine(assemblyFolder, "RAS2.exe");
 			Process p = new Process();
@@ -212,6 +213,8 @@ namespace RocketDesigner
 
 			p.StartInfo.Arguments = filename;
 			p.Start();
+
+			
 
 		}
 
@@ -901,6 +904,198 @@ namespace RocketDesigner
 			Point p = this.IdmStudy.MainSystem.GetCog(IdmCic.API.Utils.Calculation.MCI.MainSystemMassOptions.IncludeElementActivation | IdmCic.API.Utils.Calculation.MCI.MainSystemMassOptions.IncludeElementMargin, IdmStudy.MainSystem.GetConfiguration(""));
 		}
 		*/
+
+		public void create2DSketch(Rocket rocket)
+		{
+			int err = 0;
+			int warn = 0;
+
+			double x = 0;
+			double y = 0;
+			int pnbr = 5;
+			int dimnbr = 2;
+
+			var fileName = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\Pièce.SLDPRT");
+
+			swApp.NewDocument(swApp.GetUserPreferenceStringValue(((int)swUserPreferenceStringValue_e.swDefaultTemplatePart)), 0, 0, 0);
+
+			swApp.ActivateDoc2("Pièce.SLDPRT", false, err);
+			SolidWorks.Interop.sldworks.ModelDoc2 Part = (ModelDoc2)swApp.ActiveDoc;
+
+			var myModelView = Part.ActiveView;
+			swApp.SetUserPreferenceToggle((int)swUserPreferenceToggle_e.swInputDimValOnCreate, false);
+
+			Part.InsertSketch();
+			Part.Extension.SelectByID2("Plan de face", "PLANE", 0, 0, 0, false, 0, null, 0);
+			Part.ClearSelection2(true);
+
+			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+			Part.SelectedFeatureProperties(0, 0, 0, 0, 0, 0, 0, true, false, "Esquisse");
+			Part.EditSketch();
+			Part.ClearSelection2(true);
+
+
+
+			double r = rocket.getNosecone().radius*1000;
+			double h = rocket.getNosecone().Len*1000;
+
+			Part.SketchManager.CreateEquationSpline2("", "(( (" + r * r + "+" + h * h + ")/(2*" + r + ") )^2-(" + h + "-x)^2)^(1/2) + " + r + " - (" + r * r + "+" + h * h + ")/(2*" + r + ")", "", "0", "" + h, false, 0, 0, 0, true, true);
+			Part.ClearSelection2(true);
+
+			Part.SketchManager.InsertSketch(true);
+
+
+			Part.Extension.SelectByID2("Esquisse", "SKETCH", 0, 0, 0, false, 0, null, 0);
+			Part.EditSketch();
+			Part.ClearSelection2(true);
+
+			Part.SetPickMode();
+			Part.Extension.SelectByID2("Point3", "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
+			Part.Extension.SelectByID2("Point1@Origine", "EXTSKETCHPOINT", 0, 0, 0, true, 0, null, 0);
+			Part.SketchAddConstraints("sgCOINCIDENT");
+			Part.ClearSelection2(true);
+			Part.SketchManager.InsertSketch(true);
+
+
+			Part.Extension.SelectByID2("Esquisse", "SKETCH", 0, 0, 0, false, 0, null, 0);
+			Part.EditSketch();
+			Part.ClearSelection2(true);
+
+			Part.SetPickMode();
+			Part.Extension.SelectByID2("Point3", "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
+			Part.Extension.SelectByID2("Point4", "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
+			Part.AddVerticalDimension2(r * 0.001, 0, 0);
+			Dimension myDimension = (Dimension)Part.Parameter("D1@Esquisse");
+			myDimension.SystemValue = r * 0.001;
+
+
+			Part.ClearSelection2(true);
+			Part.SketchManager.InsertSketch(true);
+
+			x = h * 0.001;
+			y = r * 0.001;
+
+
+			RocketElement e = rocket.getNosecone();
+			
+			while (e.Bot != null)
+			{
+				e = e.Bot;
+				if (typeof(Body).IsInstanceOfType(e))
+				{
+					createBody(ref x, ref y, (int)(((Body) e).Len*1000), (int)(((Body)e).radius*1000), Part, ref pnbr, ref dimnbr);
+				}
+				if (typeof(Transition).IsInstanceOfType(e))
+				{
+					createBody(ref x, ref y, (int)(((Transition)e).Len*1000), (int)(((Transition)e).radiusDown*1000), Part, ref pnbr, ref dimnbr);
+				}
+			}
+			endRocket(ref x, ref y, Part, ref pnbr, ref dimnbr);
+
+			string path;
+			SaveFileDialog saveFileDialog1 = new SaveFileDialog();
+			saveFileDialog1.Filter = "IGES (*.igs)|*.igs";
+			saveFileDialog1.RestoreDirectory = true;
+
+			if (saveFileDialog1.ShowDialog() == DialogResult.OK)
+			{
+				path = saveFileDialog1.FileName;
+				Part.SaveAs3(path, 0, 2);
+				swApp.CloseDoc(Part.GetTitle());
+			}
+			else
+			{
+
+			}
+		}
+
+		public void createBody(ref double x, ref double y, int h, int r, SolidWorks.Interop.sldworks.ModelDoc2 Part, ref int pointNbr, ref int dimNbr)
+		{
+			Part.Extension.SelectByID2("Esquisse", "SKETCH", 0, 0, 0, false, 0, null, 0);
+			Part.EditSketch();
+			Part.ClearSelection2(true);
+
+			Part.SketchManager.CreateLine(x, y, 0, x + h * 0.001, r * 0.001, 0);
+
+			Part.ClearSelection2(true);
+
+			if (pointNbr == 5)
+				pointNbr++;
+			Part.SetPickMode();
+			Part.Extension.SelectByID2("Point" + pointNbr, "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
+			if (pointNbr == 6)
+			{
+				Part.Extension.SelectByID2("Point4", "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
+			}
+			else
+			{
+				Part.Extension.SelectByID2("Point" + (pointNbr - 1), "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
+			}
+
+			Part.AddHorizontalDimension2(h * 0.001, 0, 0);
+			Dimension myDimension = (Dimension)Part.Parameter("D" + dimNbr + "@Esquisse");
+			myDimension.SystemValue = h * 0.001;
+			dimNbr++;
+			Part.ClearSelection2(true);
+
+			Part.Extension.SelectByID2("Point" + pointNbr, "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
+			Part.Extension.SelectByID2("Point3", "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
+			Part.AddVerticalDimension2(r * 0.001, 0, 0);
+			myDimension = (Dimension)Part.Parameter("D" + dimNbr + "@Esquisse");
+			myDimension.SystemValue = r * 0.001;
+			dimNbr++;
+			Part.ClearSelection2(true);
+			Part.SketchManager.InsertSketch(true);
+
+			pointNbr++;
+
+			x = x + h * 0.001;
+			y = r * 0.001;
+
+		}
+
+		public void endRocket(ref double x, ref double y, SolidWorks.Interop.sldworks.ModelDoc2 Part, ref int pointNbr, ref int dimNbr)
+		{
+			Part.Extension.SelectByID2("Esquisse", "SKETCH", 0, 0, 0, false, 0, null, 0);
+			Part.EditSketch();
+			Part.ClearSelection2(true);
+
+			Part.SketchManager.CreateLine(x, y, 0, x, 0, 0);
+
+			Part.ClearSelection2(true);
+
+
+			pointNbr++;
+
+			Part.SketchManager.CreateLine(x, 0, 0, 0, 0, 0);
+
+			Part.ClearSelection2(true);
+			Part.Extension.SelectByID2("Point" + pointNbr, "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
+			Part.Extension.SelectByID2("Point1@Origine", "EXTSKETCHPOINT", 0, 0, 0, true, 0, null, 0);
+			Part.SketchAddConstraints("sgCOINCIDENT");
+			Part.ClearSelection2(true);
+
+			x = 0;
+			y = 0;
+
+			Part.ClearSelection2(true);
+			Part.SketchManager.InsertSketch(true);
+
+			Part.Extension.SelectByID2("Esquisse", "SKETCH", 0, 0, 0, false, 0, null, 0);
+			Part.InsertPlanarRefSurface();
+
+			Part.ClearSelection2(true);
+
+
+			
+
+
+		}
+
+
+
+
+
 
 		public double toInch(double m)
 		{
