@@ -47,11 +47,11 @@ namespace RocketDesigner
 
 				Microsoft.Office.Interop.Excel.Shape sh = worksheet.Shapes.AddChart2(227, XlChartType.xlLine, 0, 0, 350, 200);
 				sh.Name = "Marge Statique";
-				foreach (Microsoft.Office.Interop.Excel.Series series in sh.Chart.SeriesCollection())
+				foreach (Microsoft.Office.Interop.Excel.Series series in (Microsoft.Office.Interop.Excel.SeriesCollection)sh.Chart.SeriesCollection())
 				{
 					series.Delete();
 				}
-				sh.Chart.SeriesCollection().NewSeries();
+				((Microsoft.Office.Interop.Excel.SeriesCollection)sh.Chart.SeriesCollection()).NewSeries();
 				((Series)sh.Chart.FullSeriesCollection(1)).Name = "='ras2'!$" + col + "$1";
 				((Series)sh.Chart.FullSeriesCollection(1)).Values = "='ras2'!$" + col + "$2:$" + col + "$1001";
 				((Series)sh.Chart.FullSeriesCollection(1)).XValues = "='ras2'!$A$2:$A$1001";
@@ -81,11 +81,11 @@ namespace RocketDesigner
 
 				Microsoft.Office.Interop.Excel.Shape sh = worksheet.Shapes.AddChart2(227, XlChartType.xlLine, 350, 0, 350, 200);
 				sh.Name = "CD";
-				foreach (Microsoft.Office.Interop.Excel.Series series in sh.Chart.SeriesCollection())
+				foreach (Microsoft.Office.Interop.Excel.Series series in (Microsoft.Office.Interop.Excel.SeriesCollection)sh.Chart.SeriesCollection())
 				{
 					series.Delete();
 				}
-				sh.Chart.SeriesCollection().NewSeries();
+				((Microsoft.Office.Interop.Excel.SeriesCollection)sh.Chart.SeriesCollection()).NewSeries();
 				((Series)sh.Chart.FullSeriesCollection(1)).Name = "='ras2'!$" + col + "$1";
 				((Series)sh.Chart.FullSeriesCollection(1)).Values = "='ras2'!$" + col + "$2:$" + col + "$1001";
 				((Series)sh.Chart.FullSeriesCollection(1)).XValues = "='ras2'!$A$2:$A$1001";
@@ -114,11 +114,11 @@ namespace RocketDesigner
 
 				Microsoft.Office.Interop.Excel.Shape sh = worksheet.Shapes.AddChart2(227, XlChartType.xlLine, 700, 0, 350, 200);
 				sh.Name = "CNalpha";
-				foreach (Microsoft.Office.Interop.Excel.Series series in sh.Chart.SeriesCollection())
+				foreach (Microsoft.Office.Interop.Excel.Series series in (Microsoft.Office.Interop.Excel.SeriesCollection)sh.Chart.SeriesCollection())
 				{
 					series.Delete();
 				}
-				sh.Chart.SeriesCollection().NewSeries();
+				((Microsoft.Office.Interop.Excel.SeriesCollection)sh.Chart.SeriesCollection()).NewSeries();
 				((Series)sh.Chart.FullSeriesCollection(1)).Name = "='ras2'!$" + col + "$1";
 				((Series)sh.Chart.FullSeriesCollection(1)).Values = "='ras2'!$" + col + "$2:$" + col + "$1001";
 				((Series)sh.Chart.FullSeriesCollection(1)).XValues = "='ras2'!$A$2:$A$1001";
