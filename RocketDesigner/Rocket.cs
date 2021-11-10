@@ -15,7 +15,7 @@ namespace RocketDesigner
 
 		private Nosecone nose;
 		public Dictionary<string, RocketElement> elems;
-
+		Assembly assembly;
 
 		public Rocket()
 		{
@@ -45,6 +45,10 @@ namespace RocketDesigner
 		public double toInch(double m)
 		{
 			return Math.Round(m * 39.3701, 3);
+		}
+		public Assembly getRocketAssembly()
+		{
+			return assembly;
 		}
 
 
@@ -134,7 +138,7 @@ namespace RocketDesigner
 				return null;
 
 			Rocket r = new Rocket();
-
+			r.assembly = rocket;
 			foreach (EquipmentInstance ei in rocket.EquipmentInstances.ToList())
 			{
 				Equipment e = ei.Equipment;
