@@ -109,7 +109,7 @@ namespace RocketDesigner
 
 				((Range)worksheet.Cells[1, 19]).FormulaR1C1 = "CNalpha";
 				((Range)worksheet.Cells[2, 19]).Select();
-				app.ActiveCell.FormulaR1C1 = "=RC[-6]";
+				app.ActiveCell.FormulaR1C1 = "=RC[-7]";
 				app.ActiveCell.AutoFill(worksheet.Range[col + "2", col + "1001"], XlAutoFillType.xlFillDefault);
 
 				Microsoft.Office.Interop.Excel.Shape sh = worksheet.Shapes.AddChart2(227, XlChartType.xlLine, 700, 0, 350, 200);

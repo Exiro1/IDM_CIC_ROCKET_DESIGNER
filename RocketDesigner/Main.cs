@@ -25,16 +25,22 @@ namespace RocketDesigner
 	public class Main : AbstractPlugin
 	{
 
-		private bool swinstalled = false;
+		static string folderPath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\");
+
+
 
 		private PluginAction calculateAero;
 		private PluginAction openRas;
+		private PluginAction createOpenRocket;
 		private PluginAction create2D;
+		private PluginAction create3D;
 		private PluginAction testCheck;
 
 		private PluginButton calculateAeroBtn;
 		private PluginButton OpenRASBtn;
+		private PluginButton createOpenRocketBtn;
 		private PluginButton create2DBtn;
+		private PluginButton create3DBtn;
 		private PluginCheckBox checkbox;
 
 		private PluginObjectAction NoseConeAddAction;
@@ -52,7 +58,7 @@ namespace RocketDesigner
 		// Expose the action tothe Hosting application
 		public override System.Collections.Generic.IEnumerable<PluginObjectAction> GetObjectActions()
 		{
-			
+
 			yield return NoseConeAddAction;
 			yield return FinsAddAction;
 			yield return BodyAddAction;
@@ -86,49 +92,50 @@ namespace RocketDesigner
 		}
 
 		Excel.Workbook aero;
-		SldWorks swApp;
-		Aerodynamics aerodynamics;
 
+		Aerodynamics aerodynamics;
+		SolidWorksUtil swUtil;
 		public override void Initialise()
 		{
 			aerodynamics = new Aerodynamics();
 			calculateAero = new PluginAction("calculateAero", calculateAeroImpl);
 			openRas = new PluginAction("openRas", openRASImpl);
+			createOpenRocket = new PluginAction("createOpenRocket", createOpenRocketImpl);
 			create2D = new PluginAction("create2d", create2DImpl);
-			testCheck = new PluginAction("test_action", calculateAeroImpl);
+			create3D = new PluginAction("create3d", create3DImpl);
+			testCheck = new PluginAction("test_action", SolidworksVisibleImpl);
 
 			calculateAeroBtn = new PluginButton("calculateAero_button", "Calculate aero coef", calculateAero, "Rocket Designer", "Aerodynamics");
-			OpenRASBtn = new PluginButton("openRas_button", "Open RASAero II", openRas, "Rocket Designer", "Aerodynamics");
-			create2DBtn = new PluginButton("create2d_button", "Create 2D Sketch", create2D, "Rocket Designer", "Aerodynamics");
-			checkbox = new PluginCheckBox("test", "test", testCheck, "Rocket Designer", "test");
+			OpenRASBtn = new PluginButton("openRas_button", "Open RASAero II", openRas, "Rocket Designer", "File Creator");
+			createOpenRocketBtn = new PluginButton("createOpenRocket_button", "Create OpenRocket File", createOpenRocket, "Rocket Designer", "File Creator");
+			create2DBtn = new PluginButton("create2d_button", "Create 2D Sketch", create2D, "Rocket Designer", "File Creator");
+			create3DBtn = new PluginButton("create2d_button", "Create 3D Sketch", create3D, "Rocket Designer", "File Creator");
+			checkbox = new PluginCheckBox("sw_visible", "SolidWorks Visible", testCheck, "Rocket Designer", "Other");
 			//IdmCic_tab
 			calculateAeroBtn.IsVisibleAtStartUp = true;
 			calculateAeroBtn.IsVisibleAfterLoadingMainSystem = true;
 			calculateAeroBtn.LargeStyle = true;
 
+			checkbox.IsVisibleAtStartUp = true;
+			checkbox.IsVisibleAfterLoadingMainSystem = true;
+			checkbox.Checked = false;
+
 			OpenRASBtn.IsVisibleAtStartUp = true;
 			OpenRASBtn.IsVisibleAfterLoadingMainSystem = true;
 			OpenRASBtn.LargeStyle = true;
+
+			createOpenRocketBtn.IsVisibleAtStartUp = true;
+			createOpenRocketBtn.IsVisibleAfterLoadingMainSystem = true;
+			createOpenRocketBtn.LargeStyle = true;
 
 			create2DBtn.IsVisibleAtStartUp = true;
 			create2DBtn.IsVisibleAfterLoadingMainSystem = true;
 			create2DBtn.LargeStyle = true;
 
-			using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
-			using (var key = hklm.OpenSubKey(@"Software\SolidWorks"))
-			{
-				if (key == null)
-				{
-					// Doesn't exist...
-					MessageBox.Show("Solidwoks n'est pas installé, certaines fonctionnalitées de " + Name + " ne seront pas disponible");
-				}
-				else
-				{
-					swinstalled = true;
-					swApp = (SldWorks)Activator.CreateInstance(System.Type.GetTypeFromProgID("SldWorks.Application"));
-					swApp.Visible = false;
-				}
-			}
+			create3DBtn.IsVisibleAtStartUp = true;
+			create3DBtn.IsVisibleAfterLoadingMainSystem = true;
+			create3DBtn.LargeStyle = true;
+
 
 
 
@@ -154,6 +161,11 @@ namespace RocketDesigner
 			BodyAddButton = new PluginObjectButton("body_add_button", "Add Rocket Body", BodyAddAction);
 			TransiAddButton = new PluginObjectButton("transi_add_button", "Add Rocket Transition", TransiAddAction);
 			AssemblyAddButton = new PluginObjectButton("assembly_add_button", "Set As Rocket Assembly", AssemblyAddAction);
+
+
+			swUtil = new SolidWorksUtil();
+
+
 		}
 
 		public override object MainSystemLoaded(MainSystem system)
@@ -189,12 +201,41 @@ namespace RocketDesigner
 					if (r != null)
 					{
 						string filec = r.generateXMLFile(e.Name.Replace(" ", ""));
-						System.IO.File.Copy(filec, Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\ras.CDX1"), true);
+						r.generateOpenRocketFile(folderPath + "test.ork");
+						System.IO.File.Copy(filec, folderPath + "ras.CDX1", true);
 						fileCreated = fileCreated + filec + ";";
 					}
 				}
 			}
 			return fileCreated;
+		}
+
+		public void createOpenRocketImpl(PluginActionArgs args)
+		{
+
+			foreach (Element e in args.MainSystem.Elements)
+			{
+				foreach (RelatedSubsystem s in e.RelatedSubsystems)
+				{
+					Rocket r = Rocket.getRocketFromElement(s);
+					if (r != null)
+					{
+						string path;
+						SaveFileDialog saveFileDialog1 = new SaveFileDialog();
+						saveFileDialog1.Filter = "ORK (*.ork)|*.ork";
+						saveFileDialog1.RestoreDirectory = true;
+
+						if (saveFileDialog1.ShowDialog() == DialogResult.OK)
+						{
+							r.generateOpenRocketFile(saveFileDialog1.FileName);
+						}
+						else
+						{
+
+						}
+					}
+				}
+			}
 		}
 
 		public void openRASImpl(PluginActionArgs args)
@@ -218,32 +259,77 @@ namespace RocketDesigner
 
 		public void create2DImpl(PluginActionArgs args)
 		{
-				foreach (Element e in args.MainSystem.Elements)
+			foreach (Element e in args.MainSystem.Elements)
+			{
+				foreach (RelatedSubsystem s in e.RelatedSubsystems)
 				{
-					foreach (RelatedSubsystem s in e.RelatedSubsystems)
+
+					Rocket r = Rocket.getRocketFromElement(s);
+					if (r != null)
 					{
-					    
-						Rocket r = Rocket.getRocketFromElement(s);
-						if (r != null)
-						{
-							r.generateXMLFile(e.Name.Replace(" ", ""));
-							DialogResult dialogResult = MessageBox.Show("Include Fins?", "2D Sketch", MessageBoxButtons.YesNo);
-							double h = 0;
-							double front = 3;
-							double end = 1;
-							if (r.getRocketAssembly().GetProperty("frontFactor2D") != null)
-								front = double.Parse((r.getRocketAssembly().GetProperty("frontFactor2D").Value.ToString()));
-							if (r.getRocketAssembly().GetProperty("endFactor2D") != null)
-								end = double.Parse((r.getRocketAssembly().GetProperty("endFactor2D").Value.ToString()));
-							if (r.getRocketAssembly().GetProperty("Height2D") != null)
-								h = double.Parse((r.getRocketAssembly().GetProperty("Height2D").Value.ToString()));
-							create2DSketch(r, dialogResult == DialogResult.Yes,front,end,h);
-						}
+						r.generateXMLFile(e.Name.Replace(" ", ""));
+						DialogResult dialogResult = MessageBox.Show("Include Fins?", "2D Sketch", MessageBoxButtons.YesNo);
+						double h = 0;
+						double front = 3;
+						double end = 1;
+						if (r.getRocketAssembly().GetProperty("frontFactor2D") != null)
+							front = double.Parse((r.getRocketAssembly().GetProperty("frontFactor2D").Value.ToString()));
+						if (r.getRocketAssembly().GetProperty("endFactor2D") != null)
+							end = double.Parse((r.getRocketAssembly().GetProperty("endFactor2D").Value.ToString()));
+						if (r.getRocketAssembly().GetProperty("Height2D") != null)
+							h = double.Parse((r.getRocketAssembly().GetProperty("Height2D").Value.ToString()));
+
+						swUtil.create2DSketch(r, dialogResult == DialogResult.Yes, front, end, h);
 					}
 				}
+			}
 
 		}
 
+		public void create3DImpl(PluginActionArgs args)
+		{
+			foreach (Element e in args.MainSystem.Elements)
+			{
+				foreach (RelatedSubsystem s in e.RelatedSubsystems)
+				{
+
+					Rocket r = Rocket.getRocketFromElement(s);
+					if (r != null)
+					{
+						r.generateXMLFile(e.Name.Replace(" ", ""));
+						foreach (IdmCic.API.Model.Subsystems.Assembly rocket in s.Assemblies.ToList())
+						{
+							if (rocket.GetProperty("Rocket") != null)
+							{
+
+								IdmCic.API.Managers.MainSystemManager man = new IdmCic.API.Managers.MainSystemManager();
+
+								man.ExportViewableObjectToSTEP(rocket.GetViewableObject(), folderPath + "rocket.stp", args.MainSystem.Configurations.First(), "MM");
+								break;
+							}
+						}
+						double h = 0;
+						double front = 3;
+						double end = 1;
+						if (r.getRocketAssembly().GetProperty("frontFactor2D") != null)
+							front = double.Parse((r.getRocketAssembly().GetProperty("frontFactor2D").Value.ToString()));
+						if (r.getRocketAssembly().GetProperty("endFactor2D") != null)
+							end = double.Parse((r.getRocketAssembly().GetProperty("endFactor2D").Value.ToString()));
+						if (r.getRocketAssembly().GetProperty("Height2D") != null)
+							h = double.Parse((r.getRocketAssembly().GetProperty("Height2D").Value.ToString()));
+						swUtil.stepToBody("rocket.stp");
+						swUtil.sketch3D(r.getFinCount() == 0 ? 4 : r.getFinCount(), h, r.getLen() * (1 + end), r.getLen() * front);
+
+					}
+				}
+			}
+
+		}
+
+		private void SolidworksVisibleImpl(PluginActionArgs args)
+		{
+			swUtil.switchVisible();
+		}
 
 		private void calculateAeroImpl(PluginActionArgs args)
 		{
@@ -263,7 +349,7 @@ namespace RocketDesigner
 			p.WaitForExit();
 			MessageBox.Show("Aerodynamic coefficients have been calculated correctly");
 
-			var fileName = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\ras2.txt");
+			var fileName = folderPath + "ras2.txt";
 			if (System.IO.File.Exists(fileName))
 				System.IO.File.Delete(fileName);
 
@@ -336,7 +422,7 @@ namespace RocketDesigner
 
 		}
 
-		
+
 
 
 
@@ -348,6 +434,8 @@ namespace RocketDesigner
 			yield return testCheck;
 			yield return openRas;
 			yield return create2D;
+			yield return create3D;
+			yield return createOpenRocket;
 		}
 		// Expose the control to the Hosting application
 		public override System.Collections.Generic.IEnumerable<PluginControl> GetControls()
@@ -356,6 +444,8 @@ namespace RocketDesigner
 			yield return checkbox;
 			yield return OpenRASBtn;
 			yield return create2DBtn;
+			yield return create3DBtn;
+			yield return createOpenRocketBtn;
 		}
 
 		public override void ApplicationQuit()
@@ -363,8 +453,9 @@ namespace RocketDesigner
 
 			//aero.Close(false);
 
-			if (swinstalled)
-				swApp.ExitApp();
+			swUtil.close();
+
+
 
 			//MessageBox.Show("excel closed");
 		}
@@ -374,7 +465,7 @@ namespace RocketDesigner
 		private void AssemblyAddActionImpl(PluginObjectActionArgs args)
 		{
 			if (!typeof(Assembly).IsInstanceOfType(args.IdmObject))
-					return;
+				return;
 
 			Assembly ass = ((Assembly)args.IdmObject);
 
@@ -408,6 +499,7 @@ namespace RocketDesigner
 			IdmCic.API.Model.IdmProperties.Property propHeight = ass.AddProperty("Height2D", IdmCic.API.Model.IdmProperties.IdmPropertyType.DecimalWithoutUnit);
 			propHeight.Name = "Height 2D";
 			propHeight.Value = 2000;
+
 
 			IdmCic.API.Model.IdmProperties.Property propType = ass.AddProperty("Rocket", IdmCic.API.Model.IdmProperties.IdmPropertyType.Bool);
 			propType.Name = "Rocket";
@@ -443,7 +535,7 @@ namespace RocketDesigner
 			propTopRadius.Name = "Top Radius";
 			propTopRadius.Value = 0.3;
 
-			
+
 
 			IdmCic.API.Model.IdmProperties.Property propBotRadius = ((Equipment)args.IdmObject).AddProperty("transiBotR", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
 			propBotRadius.Name = "Bot Radius";
@@ -456,6 +548,10 @@ namespace RocketDesigner
 			IdmCic.API.Model.IdmProperties.Property propTh = ((Equipment)args.IdmObject).AddProperty("transiTh", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
 			propTh.Name = "Thickness";
 			propTh.Value = 0.02;
+
+			IdmCic.API.Model.IdmProperties.Property propDensity = ((Equipment)args.IdmObject).AddProperty("transiDe", IdmCic.API.Model.IdmProperties.IdmPropertyType.Density);
+			propDensity.Name = "Density";
+			propDensity.Value = 1780;
 
 			if (((Equipment)args.IdmObject).Shapes.Count > 0)
 				return;
@@ -504,6 +600,10 @@ namespace RocketDesigner
 			propLoc.Name = "Fin Pos";
 			propLoc.Value = 0.00;
 
+			IdmCic.API.Model.IdmProperties.Property propDensity = ((Equipment)args.IdmObject).AddProperty("bodyDe", IdmCic.API.Model.IdmProperties.IdmPropertyType.Density);
+			propDensity.Name = "Density";
+			propDensity.Value = 1780;
+
 			if (((Equipment)args.IdmObject).Shapes.Count > 0)
 				return;
 
@@ -516,11 +616,19 @@ namespace RocketDesigner
 			o1.SetPropertyFormula("D3", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value]))");
 			o1.SetPropertyFormula("D4", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))");
 
+			shape = ((Equipment)args.IdmObject).AddShape(IdmCic.API.Model.Physics.Objects3D.Object3dType.FilledCylinder);
+			shape.Name = "BodyShape";
+
+			FilledCylinder o2 = (FilledCylinder)(shape.ShapeDefinition);
+			o2.SetPropertyFormula("D1", "mm_m(m_mm([" + propRadius.FullId.ToLower() + "_value]))");
+			o2.SetPropertyFormula("D3", "mm_m(10)");
+
+			shape.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value])-10)");
 
 			//4 fins
 			CoordinateSystemDefinition sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
 			sys.Name = "fin_attach_90_1";
-			sys.Position.SetPropertyFormula("X", "mm_m(m_mm(([" + propRadius.FullId.ToLower() + "_value]-10* 0.001)))");
+			sys.Position.SetPropertyFormula("X", "mm_m(m_mm([" + propRadius.FullId.ToLower() + "_value])-10)");
 			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value] - [" + propLoc.FullId.ToLower() + "_value]))");
 			sys.Position.SetPropertyFormula("Rotation1", "90");
 			sys.Position.SetPropertyFormula("Rotation2", "180");
@@ -529,7 +637,7 @@ namespace RocketDesigner
 
 			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
 			sys.Name = "fin_attach_90_2";
-			sys.Position.SetPropertyFormula("X", "mm_m(m_mm(-([" + propRadius.FullId.ToLower() + "_value]-10* 0.001)))");
+			sys.Position.SetPropertyFormula("X", "mm_m(m_mm(-[" + propRadius.FullId.ToLower() + "_value])+10)");
 			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value] - [" + propLoc.FullId.ToLower() + "_value]))");
 			sys.Position.SetPropertyFormula("Rotation1", "90");
 			sys.Position.SetPropertyFormula("Rotation2", "0");
@@ -537,7 +645,7 @@ namespace RocketDesigner
 
 			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
 			sys.Name = "fin_attach_90_3";
-			sys.Position.SetPropertyFormula("Y", "mm_m(m_mm(([" + propRadius.FullId.ToLower() + "_value]-10* 0.001)))");
+			sys.Position.SetPropertyFormula("Y", "mm_m(m_mm([" + propRadius.FullId.ToLower() + "_value])-10)");
 			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value] - [" + propLoc.FullId.ToLower() + "_value]))");
 			sys.Position.SetPropertyFormula("Rotation1", "90");
 			sys.Position.SetPropertyFormula("Rotation2", "-90");
@@ -545,7 +653,7 @@ namespace RocketDesigner
 
 			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
 			sys.Name = "fin_attach_90_4";
-			sys.Position.SetPropertyFormula("Y", "mm_m(m_mm(-([" + propRadius.FullId.ToLower() + "_value]-10* 0.001)))");
+			sys.Position.SetPropertyFormula("Y", "mm_m(m_mm(-[" + propRadius.FullId.ToLower() + "_value])+10)");
 			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value] - [" + propLoc.FullId.ToLower() + "_value]))");
 			sys.Position.SetPropertyFormula("Rotation1", "90");
 			sys.Position.SetPropertyFormula("Rotation2", "90");
@@ -554,8 +662,8 @@ namespace RocketDesigner
 			//3 fins
 			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
 			sys.Name = "fin_attach_120_1";
-			sys.Position.SetPropertyFormula("X", "mm_m(m_mm(([" + propRadius.FullId.ToLower() + "_value]-10* 0.001)*0.5))");
-			sys.Position.SetPropertyFormula("Y", "mm_m(m_mm(-([" + propRadius.FullId.ToLower() + "_value]-10* 0.001)*COS(30*PI()/180)))");
+			sys.Position.SetPropertyFormula("X", "mm_m( (m_mm([" + propRadius.FullId.ToLower() + "_value])-10)*0.5)");
+			sys.Position.SetPropertyFormula("Y", "mm_m( (m_mm(-[" + propRadius.FullId.ToLower() + "_value])+10)*COS(30*PI()/180))");
 			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value] - [" + propLoc.FullId.ToLower() + "_value]))");
 			sys.Position.SetPropertyFormula("Rotation1", "90");
 			sys.Position.SetPropertyFormula("Rotation2", "120");
@@ -564,8 +672,8 @@ namespace RocketDesigner
 
 			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
 			sys.Name = "fin_attach_120_2";
-			sys.Position.SetPropertyFormula("X", "mm_m(m_mm(([" + propRadius.FullId.ToLower() + "_value]-10* 0.001)*0.5))");
-			sys.Position.SetPropertyFormula("Y", "mm_m(m_mm(([" + propRadius.FullId.ToLower() + "_value]-10* 0.001)*COS(30*PI()/180)))");
+			sys.Position.SetPropertyFormula("X", "mm_m( (m_mm([" + propRadius.FullId.ToLower() + "_value])-10)*0.5)");
+			sys.Position.SetPropertyFormula("Y", "mm_m( (m_mm([" + propRadius.FullId.ToLower() + "_value])-10)*COS(30*PI()/180))");
 			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value] - [" + propLoc.FullId.ToLower() + "_value]))");
 			sys.Position.SetPropertyFormula("Rotation1", "90");
 			sys.Position.SetPropertyFormula("Rotation2", "-120");
@@ -573,7 +681,7 @@ namespace RocketDesigner
 
 			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
 			sys.Name = "fin_attach_120_3";
-			sys.Position.SetPropertyFormula("X", "mm_m(m_mm(-([" + propRadius.FullId.ToLower() + "_value]-10* 0.001)))");
+			sys.Position.SetPropertyFormula("X", "mm_m(m_mm(-[" + propRadius.FullId.ToLower() + "_value])+10)");
 			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value] - [" + propLoc.FullId.ToLower() + "_value]))");
 			sys.Position.SetPropertyFormula("Rotation1", "90");
 			sys.Position.SetPropertyFormula("Rotation2", "0");
@@ -609,6 +717,11 @@ namespace RocketDesigner
 			propTh.Name = "Thickness";
 			propTh.Value = 0.02;
 
+			IdmCic.API.Model.IdmProperties.Property propDensity = ((Equipment)args.IdmObject).AddProperty("noseconeDe", IdmCic.API.Model.IdmProperties.IdmPropertyType.Density);
+			propDensity.Name = "Density";
+			propDensity.Value = 1780;
+
+
 			((Equipment)args.IdmObject).Name = getNewID((RelatedSubsystem)((Equipment)args.IdmObject).Parent, "RocketNoseCone");
 
 			if (((Equipment)args.IdmObject).Shapes.Count > 0)
@@ -618,11 +731,11 @@ namespace RocketDesigner
 			shape.Name = "NoseConeShape";
 
 
-			
 
 
 
-			var fileName = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\nosecone.STEP");
+
+			var fileName = folderPath + "nosecone.STEP";
 			((IdmCic.API.Model.Physics.Objects3D.Miscs.Step)shape.ShapeDefinition).SetStepObjectFromFile(fileName);
 			shape.Position.SetPropertyFormula("Rotation2", "-90");
 			//shape.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value]))");
@@ -667,7 +780,10 @@ namespace RocketDesigner
 			IdmCic.API.Model.IdmProperties.Property propLen = ((Equipment)args.IdmObject).AddProperty("finL", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
 			propLen.Name = "Length";
 			propLen.Value = 1200 * 0.001;
-
+			IdmCic.API.Model.IdmProperties.Property propDensity = ((Equipment)args.IdmObject).AddProperty("finDe", IdmCic.API.Model.IdmProperties.IdmPropertyType.Density);
+			propDensity.Name = "Density";
+			propDensity.Value = 1780;
+			int enfoncement = 10;
 
 			if (((Equipment)args.IdmObject).Shapes.Count > 0)
 				return;
@@ -685,8 +801,8 @@ namespace RocketDesigner
 
 			ExtrudedQuadrangle o1 = (ExtrudedQuadrangle)(bopp1.Object3d);
 			o1.SetPropertyFormula("D1", "mm_m(m_mm([" + propLen.FullId.ToLower() + "_value]))");
-			o1.SetPropertyFormula("D2", "mm_m(m_mm( (([" + propH.FullId.ToLower() + "_value]+10* 0.001))/sin(" + "[" + propAng.FullId.ToLower() + "_value]*3.14159265/180)))");
-			o1.SetPropertyFormula("D3", "mm_m(m_mm( (([" + propH.FullId.ToLower() + "_value]+10* 0.001))/sin(" + "[" + propAng2.FullId.ToLower() + "_value]*3.14159265/180)))");
+			o1.SetPropertyFormula("D2", "mm_m( (m_mm( [" + propH.FullId.ToLower() + "_value])+" + enfoncement + " )/sin(" + "[" + propAng.FullId.ToLower() + "_value]*3.14159265/180))");
+			o1.SetPropertyFormula("D3", "mm_m( (m_mm( [" + propH.FullId.ToLower() + "_value])+" + enfoncement + " )/sin(" + "[" + propAng2.FullId.ToLower() + "_value]*3.14159265/180))");
 			o1.SetPropertyFormula("D4", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))");
 			o1.SetPropertyFormula("angle1", "[" + propAng.FullId.ToLower() + "_value]");
 			o1.SetPropertyFormula("angle2", "[" + propAng2.FullId.ToLower() + "_value]");
@@ -699,7 +815,7 @@ namespace RocketDesigner
 			bopp2.OperationType = OperationType.Union;
 			bopp2.Object3d.SetPropertyFormula("D1", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))");
 			bopp2.Object3d.SetPropertyFormula("D2", "mm_m(sqrt(pow(m_mm([" + propH2.FullId.ToLower() + "_value]), 2)+pow(m_mm([" + propTh.FullId.ToLower() + "_value])/2, 2) ))");
-			bopp2.Object3d.SetPropertyFormula("D3", "mm_m(m_mm(([" + propH.FullId.ToLower() + "_value]+10* 0.001))/sin(" + "[" + propAng.FullId.ToLower() + "_value]*3.14159265/180) + 500)");
+			bopp2.Object3d.SetPropertyFormula("D3", "mm_m((m_mm([" + propH.FullId.ToLower() + "_value])+" + enfoncement + ")/sin(" + "[" + propAng.FullId.ToLower() + "_value]*3.14159265/180)+500)");
 
 
 
@@ -728,7 +844,7 @@ namespace RocketDesigner
 			bopp6.OperationType = OperationType.Union;
 			bopp6.Object3d.SetPropertyFormula("D1", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))");
 			bopp6.Object3d.SetPropertyFormula("D2", "mm_m(sqrt(pow(m_mm([" + propH3.FullId.ToLower() + "_value]), 2)+pow(m_mm([" + propTh.FullId.ToLower() + "_value])/2, 2) ))");
-			bopp6.Object3d.SetPropertyFormula("D3", "mm_m(m_mm(([" + propH.FullId.ToLower() + "_value]+10* 0.001))/sin(" + "[" + propAng2.FullId.ToLower() + "_value]*3.14159265/180) + 500)");
+			bopp6.Object3d.SetPropertyFormula("D3", "mm_m( (m_mm([" + propH.FullId.ToLower() + "_value])+" + enfoncement + ") /sin(" + "[" + propAng2.FullId.ToLower() + "_value]*3.14159265/180) +500)");
 
 
 
@@ -756,7 +872,7 @@ namespace RocketDesigner
 			bopp4.Object3d.SetPropertyFormula("D2", "mm_m(1000)");
 			bopp4.Object3d.SetPropertyFormula("D3", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))*2");
 
-			bopp4.Position.SetPropertyFormula("Y", "mm_m(m_mm(([" + propH.FullId.ToLower() + "_value]+10* 0.001)))");
+			bopp4.Position.SetPropertyFormula("Y", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value])+" + enfoncement + ")");
 			bopp4.Position.SetPropertyFormula("Z", "mm_m(m_mm(-[" + propTh.FullId.ToLower() + "_value]))");
 			bopp4.Position.SetPropertyFormula("X", "mm_m(m_mm(-[" + propH2.FullId.ToLower() + "_value]*3))");
 
@@ -778,11 +894,11 @@ namespace RocketDesigner
 
 			if (propRadius is null || propHeight is null || noseCone.Shapes.First() is null)
 				return;
-			
-			if (swinstalled)
+
+			if (swUtil.isAvailable())
 			{
-				updateSWNoseFile((double)propRadius.Value * 1000, (double)propHeight.Value * 1000, (double)propTh.Value * 1000);
-				var fileName = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\nosecone2.STEP");
+				swUtil.updateSWNoseFile((double)propRadius.Value * 1000, (double)propHeight.Value * 1000, (double)propTh.Value * 1000);
+				var fileName = folderPath + "nosecone2.STEP";
 				((IdmCic.API.Model.Physics.Objects3D.Miscs.Step)noseCone.Shapes.First().ShapeDefinition).SetStepObjectFromFile(fileName);
 			}
 			else
@@ -798,475 +914,6 @@ namespace RocketDesigner
 				}
 			}
 		}
-		public void updateSWNoseFile(double r, double h, double th)
-		{
-			int err = 0;
-			int warn = 0;
-
-			double x = 0;
-			double y = 0;
-			
-			var fileName = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\Pièce.SLDPRT");
-			
-			//((int)swUserPreferenceStringValue_e.swDefaultTemplatePart)
-			swApp.NewDocument(swApp.GetUserPreferenceStringValue(8), 0, 0, 0);
-			
-			swApp.ActivateDoc2("Pièce.SLDPRT", false, err);
-			
-			ModelDoc2 Part = (ModelDoc2)swApp.ActiveDoc;
-			
-			var myModelView = Part.ActiveView;
-			swApp.SetUserPreferenceToggle((int)swUserPreferenceToggle_e.swInputDimValOnCreate, false);
-
-			Part.InsertSketch();
-			Part.Extension.SelectByID2("Plan de face", "PLANE", 0, 0, 0, false, 0, null, 0);
-			Part.ClearSelection2(true);
-			
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			//Part.SelectedFeatureProperties(0, 0, 0, 0, 0, 0, 0, true, false, "Esquisse");
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-			
-
-			Part.SketchManager.CreateEquationSpline2("", "(( (" + r * r + "+" + h * h + ")/(2*" + r + ") )^2-(" + h + "-x)^2)^(1/2) + " + r + " - (" + r * r + "+" + h * h + ")/(2*" + r + ")", "", "0", "" + h, false, 0, 0, 0, true, true);
-			
-			Part.ClearSelection2(true);
-
-			Part.SketchManager.InsertSketch(true);
-			
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-
-			Part.SetPickMode();
-			Part.Extension.SelectByID2("Point3", "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			Part.Extension.SelectByID2("Point1@Origine", "EXTSKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			Part.SketchAddConstraints("sgCOINCIDENT");
-			Part.ClearSelection2(true);
-			Part.SketchManager.InsertSketch(true);
-			
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-			Part.SketchManager.CreateLine(0, 0, 0, 10, 0, 0);
-			Part.ClearSelection2(true);
-			Part.SketchManager.InsertSketch(true);
-			
-
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-			Part.SketchManager.CreateEquationSpline2("", "(( (" + r * r + "+" + h * h + ")/(2*" + r + ") )^2-(" + h + "-x)^2)^(1/2) + " + r + " - (" + r * r + "+" + h * h + ")/(2*" + r + ") - " + th, "", "0", "" + h, false, 0, 0, 0, true, true);
-			Part.ClearSelection2(true);
-			Part.SketchManager.InsertSketch(true);
-			
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-			Part.SketchManager.CreateLine(h * 0.001, r * 0.001, 0, h * 0.001, (r - th) * 0.001, 0);
-			Part.ClearSelection2(true);
-			Part.SketchManager.InsertSketch(true);
-			
-
-
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-
-			Part.SetPickMode();
-			Part.Extension.SelectByID2("Spline4", "SKETCHSEGMENT", 0, 1, 0, true, 0, null, 0);
-			Part.Extension.SelectByID2("Line1", "SKETCHSEGMENT", 0, 0, 0, true, 0, null, 0);
-			Part.SketchManager.SketchTrim(1, 0, 0, 0);
-			Part.ClearSelection2(true);
-			Part.SketchManager.InsertSketch(true);
-
-
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-			Part.SketchManager.CreateCenterLine(0, 0, 0, 1, 0, 0);
-			Part.ClearSelection2(true);
-			Part.SketchManager.InsertSketch(true);
-
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.Extension.SelectByID2("Line3@Esquisse1", "SKETCHSEGMENT", 0, 0, 0, true, 16, null, 0);
-			Part.FeatureManager.FeatureRevolve2(true, true, false, false, false, false, 0, 0, 6.2831853071796, 0, false, false, 0.01, 0.01, 0, 0, 0, true, true, true);
-			
-			((SelectionMgr)Part.SelectionManager).EnableContourSelection = false;
-			Part.ClearSelection2(true);
-
-
-			fileName = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\nosecone2.STEP");
-			Part.SaveAs3(fileName, 0, 2);
-			swApp.CloseDoc(Part.GetTitle());
-
-		}
-
-
-
-		/*
-		public void test(MainSystem syst)
-		{
-			Point p = this.IdmStudy.MainSystem.GetCog(IdmCic.API.Utils.Calculation.MCI.MainSystemMassOptions.IncludeElementActivation | IdmCic.API.Utils.Calculation.MCI.MainSystemMassOptions.IncludeElementMargin, IdmStudy.MainSystem.GetConfiguration(""));
-		}
-		*/
-
-		public void create2DSketch(Rocket rocket, bool withFins, double front, double end, double h2d)
-		{
-			int err = 0;
-			int warn = 0;
-
-			double x = 0;
-			double y = 0;
-			int pnbr = 5;
-			int dimnbr = 2;
-
-			var fileName = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\Pièce.SLDPRT");
-
-			swApp.NewDocument(swApp.GetUserPreferenceStringValue(((int)swUserPreferenceStringValue_e.swDefaultTemplatePart)), 0, 0, 0);
-
-			swApp.ActivateDoc2("Pièce.SLDPRT", false, err);
-			ModelDoc2 Part = (ModelDoc2)swApp.ActiveDoc;
-
-			var myModelView = Part.ActiveView;
-			swApp.SetUserPreferenceToggle((int)swUserPreferenceToggle_e.swInputDimValOnCreate, false);
-
-			Part.InsertSketch();
-			Part.Extension.SelectByID2("Plan de face", "PLANE", 0, 0, 0, false, 0, null, 0);
-			Part.ClearSelection2(true);
-
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.SelectedFeatureProperties(0, 0, 0, 0, 0, 0, 0, true, false, "Esquisse");
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-
-
-
-			double r = rocket.getNosecone().radius*1000;
-			double h = rocket.getNosecone().Len*1000;
-
-			Part.SketchManager.CreateEquationSpline2("", "(( (" + r * r + "+" + h * h + ")/(2*" + r + ") )^2-(" + h + "-x)^2)^(1/2) + " + r + " - (" + r * r + "+" + h * h + ")/(2*" + r + ")", "", "0", "" + h, false, 0, 0, 0, true, true);
-			Part.ClearSelection2(true);
-
-			Part.SketchManager.InsertSketch(true);
-
-
-			Part.Extension.SelectByID2("Esquisse", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-
-			Part.SetPickMode();
-			Part.Extension.SelectByID2("Point3", "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			Part.Extension.SelectByID2("Point1@Origine", "EXTSKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			Part.SketchAddConstraints("sgCOINCIDENT");
-			Part.ClearSelection2(true);
-			Part.SketchManager.InsertSketch(true);
-
-
-			Part.Extension.SelectByID2("Esquisse", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-
-			Part.SetPickMode();
-			Part.Extension.SelectByID2("Point3", "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			Part.Extension.SelectByID2("Point4", "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			Part.AddVerticalDimension2(r * 0.001, 0, 0);
-			Dimension myDimension = (Dimension)Part.Parameter("D1@Esquisse");
-			myDimension.SystemValue = r * 0.001;
-
-
-			Part.ClearSelection2(true);
-			Part.SketchManager.InsertSketch(true);
-
-			x = h * 0.001;
-			y = r * 0.001;
-
-
-			RocketElement e = rocket.getNosecone();
-			
-			while (e.Bot != null)
-			{
-				e = e.Bot;
-				if (typeof(Body).IsInstanceOfType(e))
-				{
-
-					if (withFins && e.SideAttach.Count>0)
-					{
-						int subbody = (int)((((Body)e).Len - ((Fin)e.SideAttach.First()).chord - ((Body)e).finLoc) * 1000);
-
-						int finTE = (int)((((Fin)e.SideAttach.First()).chord - ((Fin)e.SideAttach.First()).sweepDist - ((Fin)e.SideAttach.First()).TipChord) * 1000);
-						//int subbody = (int)((((Body)e).Len - ((Fin)e.SideAttach.First()).chord - ((Fin)e.SideAttach.First()).Loc) * 1000);
-
-
-						createBody(ref x, ref y, subbody, (int)(((Body)e).radius * 1000), Part, ref pnbr, ref dimnbr);
-						createBody(ref x, ref y, (int)(((Fin)e.SideAttach.First()).sweepDist * 1000), (int) ( (((Fin)e.SideAttach.First()).span + ((Body)e).radius) * 1000), Part, ref pnbr, ref dimnbr);
-						createBody(ref x, ref y, (int)(((Fin)e.SideAttach.First()).TipChord * 1000), (int)((((Fin)e.SideAttach.First()).span + ((Body)e).radius) * 1000), Part, ref pnbr, ref dimnbr);
-						createBody(ref x, ref y, finTE, (int)(((Body)e).radius * 1000), Part, ref pnbr, ref dimnbr);
-						if (((Body)e).finLoc != 0){
-							createBody(ref x, ref y, (int)(((Body)e).finLoc * 1000), (int)(((Body)e).radius * 1000), Part, ref pnbr, ref dimnbr);
-						}
-					}
-					else
-					{
-						createBody(ref x, ref y, (int)(((Body)e).Len * 1000), (int)(((Body)e).radius * 1000), Part, ref pnbr, ref dimnbr);
-					}
-						
-
-				}
-				if (typeof(Transition).IsInstanceOfType(e))
-				{
-					createBody(ref x, ref y, (int)(((Transition)e).Len*1000), (int)(((Transition)e).radiusDown*1000), Part, ref pnbr, ref dimnbr);
-				}
-			}
-			endRocket(ref x, ref y,front, end, h2d, Part, ref pnbr, ref dimnbr);
-
-			string path;
-			SaveFileDialog saveFileDialog1 = new SaveFileDialog();
-			saveFileDialog1.Filter = "IGES (*.igs)|*.igs";
-			saveFileDialog1.RestoreDirectory = true;
-
-			if (saveFileDialog1.ShowDialog() == DialogResult.OK)
-			{
-				path = saveFileDialog1.FileName;
-				Part.SaveAs3(path, 0, 2);
-				Part.SaveAs3(path.Replace(".igs",".SLDPRT"), 0, 2);
-				swApp.CloseDoc(Part.GetTitle());
-			}
-			else
-			{
-
-			}
-		}
-
-
-		public void createBody(ref double x, ref double y, int h, int r, ModelDoc2 Part, ref int pointNbr, ref int dimNbr)
-		{
-			Dimension myDimension;
-			Part.Extension.SelectByID2("Esquisse", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-
-			Part.SketchManager.CreateLine(x, y, 0, x + h * 0.001, r * 0.001, 0);
-
-			Part.ClearSelection2(true);
-
-			if (pointNbr == 5)
-				pointNbr++;
-			Part.SetPickMode();
-			Part.Extension.SelectByID2("Point" + pointNbr, "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			if (pointNbr == 6)
-			{
-				Part.Extension.SelectByID2("Point4", "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			}
-			else
-			{
-				Part.Extension.SelectByID2("Point" + (pointNbr - 1), "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			}
-			if (h != 0)
-			{
-				Part.AddHorizontalDimension2(Math.Abs(h) * 0.001, 0, 0);
-				myDimension = (Dimension)Part.Parameter("D" + dimNbr + "@Esquisse");
-				myDimension.SystemValue = Math.Abs(h) * 0.001;
-				dimNbr++;
-			}
-			Part.ClearSelection2(true);
-			Part.Extension.SelectByID2("Point" + pointNbr, "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			Part.Extension.SelectByID2("Point3", "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			Part.AddVerticalDimension2(r * 0.001, 0, 0);
-			myDimension = (Dimension)Part.Parameter("D" + dimNbr + "@Esquisse");
-			myDimension.SystemValue = r * 0.001;
-			dimNbr++;
-			Part.ClearSelection2(true);
-			Part.SketchManager.InsertSketch(true);
-
-			pointNbr++;
-
-			x = x + h * 0.001;
-			y = r * 0.001;
-
-		}
-
-
-		public void endRocket(ref double x, ref double y, double front, double end, double h, ModelDoc2 Part, ref int pointNbr, ref int dimNbr)
-		{
-			Part.Extension.SelectByID2("Esquisse", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-
-			Part.SketchManager.CreateLine(x, y, 0, x, 0, 0);
-
-			Part.ClearSelection2(true);
-
-			pointNbr++;
-
-			double len = x;
-
-			Part.ClearSelection2(true);
-			Part.SketchManager.CreateLine(x, 0, 0, x + end * len, 0, 0);
-			Part.ClearSelection2(true);
-			x = x + end * len;
-			y = 0;
-			pointNbr++;
-
-			Part.ClearSelection2(true);
-			Part.SketchManager.CreateLine(x, y, 0, x, y + h * 0.001, 0);
-			Part.ClearSelection2(true);
-			x = x;
-			y = y + h * 0.001;
-			Part.Extension.SelectByID2("Point" + pointNbr, "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			Part.Extension.SelectByID2("Point3", "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			Part.AddVerticalDimension2(h * 0.001, 0, 0);
-			Dimension myDimension = (Dimension)Part.Parameter("D" + dimNbr + "@Esquisse");
-			myDimension.SystemValue = h * 0.001;
-			dimNbr++;
-			pointNbr++;
-			Part.ClearSelection2(true);
-
-
-			Part.ClearSelection2(true);
-			Part.SketchManager.CreateLine(x, y, 0, x - (end + 1 + front) * len, y, 0);
-			Part.ClearSelection2(true);
-			x = x - (end + 1 + front) * len;
-			y = y;
-			Part.Extension.SelectByID2("Point" + pointNbr, "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			Part.Extension.SelectByID2("Point3", "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			Part.AddHorizontalDimension2((front) * len, 0, 0);
-			myDimension = (Dimension)Part.Parameter("D" + dimNbr + "@Esquisse");
-			myDimension.SystemValue = (front) * len;
-			dimNbr++;
-			pointNbr++;
-			Part.ClearSelection2(true);
-
-
-			Part.ClearSelection2(true);
-			Part.SketchManager.CreateLine(x, y, 0, x, 0, 0);
-			Part.ClearSelection2(true);
-			x = x;
-			y = 0;
-			pointNbr++;
-
-			Part.SketchManager.CreateLine(x, y, 0, x + front * len, 0, 0);
-
-			Part.ClearSelection2(true);
-			Part.Extension.SelectByID2("Point" + pointNbr, "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			Part.Extension.SelectByID2("Point1@Origine", "EXTSKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			Part.SketchAddConstraints("sgCOINCIDENT");
-			Part.ClearSelection2(true);
-
-
-			x = 0;
-			y = 0;
-
-			Part.ClearSelection2(true);
-			Part.SketchManager.InsertSketch(true);
-
-			Part.Extension.SelectByID2("Esquisse", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.InsertPlanarRefSurface();
-
-			Part.ClearSelection2(true);
-		}
-
-
-		public double toInch(double m)
-		{
-			return Math.Round(m * 39.3701, 3);
-		}
-
-		public double toMeter(double inch)
-		{
-			return Math.Round(inch / 39.3701, 3);
-		}
-
-		/*
-		 * - step -> sw part -> combine
-		 * - creer une piece quart / tier de cylindre
-		 * - ajouter la piece cylindre au sw part de la fusée
-		 * - positioner les 2 corps
-		 * - combine
-		 * - export igs
-		*/
-
-		public void ddSketch()
-		{
-			//
-			int err = 0;
-			int warn = 0;
-
-			double x = 0;
-			double y = 0;
-			int pnbr = 5;
-			int dimnbr = 2;
-
-			var fileName = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\Pièce.SLDPRT");
-
-			swApp.NewDocument(swApp.GetUserPreferenceStringValue(((int)swUserPreferenceStringValue_e.swDefaultTemplatePart)), 0, 0, 0);
-
-			swApp.ActivateDoc2("Pièce.SLDPRT", false, err);
-			SolidWorks.Interop.sldworks.ModelDoc2 Part = (ModelDoc2)swApp.ActiveDoc;
-
-			var myModelView = Part.ActiveView;
-			swApp.SetUserPreferenceToggle((int)swUserPreferenceToggle_e.swInputDimValOnCreate, false);
-
-			Part.InsertSketch();
-			Part.Extension.SelectByID2("Plan de face", "PLANE", 0, 0, 0, false, 0, null, 0);
-			Part.ClearSelection2(true);
-
-			Part.SketchManager.CreateCenterLine(0, 0, 0, 3, 0, 0);
-			Part.ClearSelection2(true);
-
-			Part.SketchManager.CreateLine(0, 0, 0, 2, 1.5, 0);
-			Part.ClearSelection2(true);
-
-			Part.Extension.SelectByID2("Line2", "SKETCHSEGMENT", 0, 0, 0, true, 0, null, 0);
-			Part.Extension.SelectByID2("Line1", "SKETCHSEGMENT", 0, 0, 0, true, 0, null, 0);
-			Part.AddRadialDimension2(0, 0, 0);
-			Dimension myDimension = (Dimension)Part.Parameter("D1@Esquisse1");
-			myDimension.SystemValue = 120 * Math.PI / 180;
-			Part.ClearSelection2(true);
-
-			Part.Extension.SelectByID2("Line2", "SKETCHSEGMENT", 0, 0, 0, true, 0, null, 0);
-			Part.AddDimension2(0, 0, 0);
-			myDimension = (Dimension)Part.Parameter("D2@Esquisse1");
-			myDimension.SystemValue = 3;
-			Part.ClearSelection2(true);
-
-			Part.SketchManager.CreateArc(0, 0, 0, -1.5, 2.598076, 0, -2.974223, 0.392423, 0, 1);
-			Part.ClearSelection2(true);
-
-			Part.SketchManager.CreateLine(-2.974223, 0.392423, 0, 0, 0, 0);
-			Part.ClearSelection2(true);
-
-			Part.Extension.SelectByID2("Line2", "SKETCHSEGMENT", 0, 0, 0, true, 0, null, 0);
-			Part.Extension.SelectByID2("Line3", "SKETCHSEGMENT", 0, 0, 0, true, 0, null, 0);
-			Part.AddRadialDimension2(0, 0, 0);
-			myDimension = (Dimension)Part.Parameter("D3@Esquisse1");
-			myDimension.SystemValue = 60 * Math.PI / 180;
-			Part.ClearSelection2(true);
-
-
-
-			Part.InsertSketch();
-
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-
-			Part.FeatureManager.FeatureExtrusion2(true, false, false, 0, 0, 10, 0.01, false, false, false, false, 1.74532925199433E-02, 1.74532925199433E-02, false, false, false, false, true, true, true, 0, 0, false);
-			Part.SelectionManager.EnableContourSelection = false;
-
-
-			Part.Extension.SelectByID2("Pièce.SLDPRT", "COMPONENT", 0, 0, 0, false, 0, null, 0);
-			Part.SaveAs3(@"C:\Users\cgene\OneDrive\Documents\idm_files\cover.SLDPRT", 0, 0);
-			Part.ClearSelection2(true);
-			Part.EditRebuild3();
-			Part.Save3(1, ref err, ref warn);
-
-			((PartDoc)Part).InsertPart3(@"C:\Users\cgene\OneDrive\Documents\idm_files\test.SLDPRT", 21, "Défaut");
-
-			Part.Extension.SelectByID2("Boss.-Extru.1", "SOLIDBODY", 0, 0, 0, false, 1, null, 0);
-			Part.Extension.SelectByID2("<test>-<Combiner1>", "SOLIDBODY", 0, 0, 0, true, 2, null, 0);
-			Part.FeatureManager.InsertCombineFeature(15902, null, null);
-
-		}
 
 	}
-
 }

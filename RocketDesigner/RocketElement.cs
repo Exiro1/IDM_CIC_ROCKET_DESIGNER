@@ -39,5 +39,7 @@ namespace RocketDesigner
 		}
 		public abstract void WriteToXML(XmlTextWriter writter);
 
+		public abstract void WriteToOpenRocket(XmlTextWriter writter);
+
 	}
 }

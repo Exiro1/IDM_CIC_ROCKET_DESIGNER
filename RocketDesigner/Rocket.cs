@@ -16,7 +16,8 @@ namespace RocketDesigner
 		private Nosecone nose;
 		public Dictionary<string, RocketElement> elems;
 		Assembly assembly;
-
+		double totalLen;
+		int finCount;
 		public Rocket()
 		{
 			elems = new Dictionary<string, RocketElement>();
@@ -50,6 +51,74 @@ namespace RocketDesigner
 		{
 			return assembly;
 		}
+		public double getLen()
+		{
+			return totalLen;
+		}
+
+		public int getFinCount()
+		{
+			return finCount;
+		}
+
+
+		public string generateOpenRocketFile(string path)
+		{
+			string filename = path;
+			XmlTextWriter xmlTextWriter2 = new XmlTextWriter(filename, null);
+			
+
+			xmlTextWriter2.Formatting = Formatting.Indented;
+
+			xmlTextWriter2.WriteStartDocument();
+
+			xmlTextWriter2.WriteStartElement("openrocket");
+			xmlTextWriter2.WriteAttributeString("version","1.4");
+			xmlTextWriter2.WriteAttributeString("creator", "OpenRocket 15.03dev");
+			xmlTextWriter2.WriteStartElement("rocket");
+
+			xmlTextWriter2.WriteElementString("name", "testttt");
+			//xmlTextWriter2.WriteElementString("motorconfiguration", "Sheet Metal");
+			xmlTextWriter2.WriteElementString("referencetype", "maximum");
+
+
+			xmlTextWriter2.WriteStartElement("subcomponents");
+			xmlTextWriter2.WriteStartElement("stage");
+
+			xmlTextWriter2.WriteElementString("name", "stage 1");
+
+			xmlTextWriter2.WriteStartElement("subcomponents");
+
+			RocketElement e = nose;
+			e.WriteToOpenRocket(xmlTextWriter2);
+			while (e.Bot != null)
+			{
+				e = e.Bot;
+				e.WriteToOpenRocket(xmlTextWriter2);
+				if (e.SideAttach.Count > 0)
+				{
+					finCount = e.SideAttach.Count;
+				}
+			}
+			xmlTextWriter2.WriteEndElement();//sub
+
+
+			xmlTextWriter2.WriteEndElement();//stage
+
+			xmlTextWriter2.WriteEndElement();//sub
+
+			xmlTextWriter2.WriteEndElement();//rocket
+
+			xmlTextWriter2.WriteStartElement("simulations");
+			xmlTextWriter2.WriteEndElement();
+
+			xmlTextWriter2.WriteEndElement();//openrocket
+
+			xmlTextWriter2.WriteEndDocument();
+			xmlTextWriter2.Close();
+
+			return filename;
+		}
 
 
 		public string generateXMLFile(string name)
@@ -73,6 +142,10 @@ namespace RocketDesigner
 			{
 				e = e.Bot;
 				e.WriteToXML(xmlTextWriter2);
+				if (e.SideAttach.Count > 0)
+				{
+					finCount = e.SideAttach.Count;
+				}
 			}
 
 			//OTHER
@@ -144,7 +217,7 @@ namespace RocketDesigner
 				Equipment e = ei.Equipment;
 				if (e.GetProperty("RocketBody") != null)
 				{
-					Body b = new Body((double)e.GetProperty("bodyH").Value, (double)e.GetProperty("bodyFinPos").Value, (double)e.GetProperty("bodyR").Value);
+					Body b = new Body((double)e.GetProperty("bodyH").Value, (double)e.GetProperty("bodyFinPos").Value, (double)e.GetProperty("bodyR").Value, (double)e.GetProperty("bodyDe").Value, (double)e.GetProperty("bodyTh").Value);
 					b.Name = e.Name;
 					r.addElement(b);
 				}
@@ -154,20 +227,20 @@ namespace RocketDesigner
 
 					double invsweep = ((double)e.GetProperty("finh").Value) / Math.Tan((180 - (double)e.GetProperty("finA2").Value) * Math.PI / 180);
 
-					Fin fi = new Fin((double)e.GetProperty("finl").Value, (double)e.GetProperty("finh").Value, sweep, (double)e.GetProperty("finl").Value - sweep - invsweep, (double)e.GetProperty("finth").Value, 0, 1, 1, "Hexagonal", 0);
+					Fin fi = new Fin((double)e.GetProperty("finl").Value, (double)e.GetProperty("finh").Value, sweep, (double)e.GetProperty("finl").Value - sweep - invsweep, (double)e.GetProperty("finth").Value, 0, 1, 1, "Hexagonal", 0, (double)e.GetProperty("finDe").Value);
 					fi.Name = e.Name;
 					r.addElement(fi);
 				}
 				else if (e.GetProperty("RocketNoseCone") != null)
 				{
-					Nosecone n = new Nosecone(Nosecone.NoseConeShape.Tangent, (double)e.GetProperty("noseconeH").Value, (double)e.GetProperty("noseconeR").Value, 0);
+					Nosecone n = new Nosecone(Nosecone.NoseConeShape.Tangent, (double)e.GetProperty("noseconeH").Value, (double)e.GetProperty("noseconeR").Value, 0, (double)e.GetProperty("noseconeDe").Value, (double)e.GetProperty("noseconeTh").Value);
 					n.Name = e.Name;
 					r.addElement(n);
 					r.setNose(n);
 				}
 				else if (e.GetProperty("RocketTransition") != null)
 				{
-					Transition tr = new Transition((double)e.GetProperty("transiH").Value, (double)e.GetProperty("transiTopR").Value, (double)e.GetProperty("transiBotR").Value);
+					Transition tr = new Transition((double)e.GetProperty("transiH").Value, (double)e.GetProperty("transiTopR").Value, (double)e.GetProperty("transiBotR").Value, (double)e.GetProperty("transiDe").Value, (double)e.GetProperty("transiTh").Value);
 					tr.Name = e.Name;
 					r.addElement(tr);
 				}
@@ -204,6 +277,7 @@ namespace RocketDesigner
 				el.Bot.Loc = el.Loc + el.Len;
 				el = el.Bot;
 			}
+			r.totalLen = el.Loc + el.Len;
 			return r;
 		}
 	}

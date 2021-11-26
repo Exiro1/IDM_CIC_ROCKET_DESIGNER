@@ -12,18 +12,22 @@ namespace RocketDesigner
 
 		public enum NoseConeShape { Tangent }
 
-		public Nosecone(NoseConeShape shape, double len, double radius, double bluntRadius)
+		public Nosecone(NoseConeShape shape, double len, double radius, double bluntRadius, double density,double thickness)
 		{
 			this.shape = shape;
 			Len = len;
 			this.radius = radius;
 			this.bluntRadius = bluntRadius;
+			this.density = density;
+			this.thickness = thickness;
 			Loc = 0;
 		}
 
 		public NoseConeShape shape;
 		public double radius;
 		public double bluntRadius;
+		public double density;
+		public double thickness;
 
 		public override void WriteToXML(XmlTextWriter writer)
 		{
@@ -35,6 +39,32 @@ namespace RocketDesigner
 			writer.WriteElementString("BluntRadius", toInch(bluntRadius).ToString());
 			writer.WriteElementString("Location", toInch(Loc).ToString());
 			writer.WriteElementString("Color", "Black");
+			writer.WriteEndElement();
+		}
+
+		public override void WriteToOpenRocket(XmlTextWriter writer)
+		{
+
+			writer.WriteStartElement("nosecone");
+			writer.WriteElementString("name", "Nosecone");
+			writer.WriteElementString("finish", "normal");
+
+			writer.WriteStartElement("material");
+			writer.WriteAttributeString("type", "bulk");
+			writer.WriteAttributeString("density", density.ToString().Replace(",", "."));
+			writer.WriteString("Body Material");
+			writer.WriteEndElement();
+
+			writer.WriteElementString("length", (Len).ToString().Replace(",", "."));
+			writer.WriteElementString("thickness", (thickness).ToString().Replace(",", "."));
+			writer.WriteElementString("shape", "ogive");
+			writer.WriteElementString("shapeparameter", "1.0");
+			writer.WriteElementString("aftradius", (radius).ToString().Replace(",","."));
+			writer.WriteElementString("aftshoulderradius", "0.0");
+			writer.WriteElementString("aftshoulderlength", "0.0");
+			writer.WriteElementString("aftshoulderthickness", "0.0");
+			writer.WriteElementString("aftshouldercapped", "false");
+
 			writer.WriteEndElement();
 		}
 	}
