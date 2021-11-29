@@ -35,12 +35,14 @@ namespace RocketDesigner
 		private PluginAction create2D;
 		private PluginAction create3D;
 		private PluginAction testCheck;
+		private PluginAction launchSimu;
 
 		private PluginButton calculateAeroBtn;
 		private PluginButton OpenRASBtn;
 		private PluginButton createOpenRocketBtn;
 		private PluginButton create2DBtn;
 		private PluginButton create3DBtn;
+		private PluginButton launchSimuBtn;
 		private PluginCheckBox checkbox;
 
 		private PluginObjectAction NoseConeAddAction;
@@ -88,7 +90,7 @@ namespace RocketDesigner
 		}
 		public override string Version
 		{
-			get { return "0.2.0"; }
+			get { return "0.3.0"; }
 		}
 
 		Excel.Workbook aero;
@@ -103,6 +105,7 @@ namespace RocketDesigner
 			createOpenRocket = new PluginAction("createOpenRocket", createOpenRocketImpl);
 			create2D = new PluginAction("create2d", create2DImpl);
 			create3D = new PluginAction("create3d", create3DImpl);
+			launchSimu = new PluginAction("launchSimu", launchSimuImpl);
 			testCheck = new PluginAction("test_action", SolidworksVisibleImpl);
 
 			calculateAeroBtn = new PluginButton("calculateAero_button", "Calculate aero coef", calculateAero, "Rocket Designer", "Aerodynamics");
@@ -111,6 +114,7 @@ namespace RocketDesigner
 			create2DBtn = new PluginButton("create2d_button", "Create 2D Sketch", create2D, "Rocket Designer", "File Creator");
 			create3DBtn = new PluginButton("create2d_button", "Create 3D Sketch", create3D, "Rocket Designer", "File Creator");
 			checkbox = new PluginCheckBox("sw_visible", "SolidWorks Visible", testCheck, "Rocket Designer", "Other");
+			launchSimuBtn = new PluginButton("launchSimu_button", "Launch Simulation", launchSimu, "Rocket Designer", "Aerodynamics");
 			//IdmCic_tab
 			calculateAeroBtn.IsVisibleAtStartUp = true;
 			calculateAeroBtn.IsVisibleAfterLoadingMainSystem = true;
@@ -137,6 +141,9 @@ namespace RocketDesigner
 			create3DBtn.LargeStyle = true;
 
 
+			launchSimuBtn.IsVisibleAtStartUp = true;
+			launchSimuBtn.IsVisibleAfterLoadingMainSystem = true;
+			launchSimuBtn.LargeStyle = true;
 
 
 			/*
@@ -210,7 +217,23 @@ namespace RocketDesigner
 			return fileCreated;
 		}
 
-		public void createOpenRocketImpl(PluginActionArgs args)
+		public void launchSimuImpl(PluginActionArgs args)
+		{
+			foreach (Element e in args.MainSystem.Elements)
+			{
+				foreach (RelatedSubsystem s in e.RelatedSubsystems)
+				{
+					Rocket r = Rocket.getRocketFromElement(s);
+					if (r != null)
+					{
+						calculAeroCoef(args, false);
+						aerodynamics.startSimu(e,r);
+					}
+				}
+			}
+		}
+
+			public void createOpenRocketImpl(PluginActionArgs args)
 		{
 
 			foreach (Element e in args.MainSystem.Elements)
@@ -331,7 +354,7 @@ namespace RocketDesigner
 			swUtil.switchVisible();
 		}
 
-		private void calculateAeroImpl(PluginActionArgs args)
+		public void calculAeroCoef(PluginActionArgs args, bool box)
 		{
 			string files = updateRocketXML(args.MainSystem);
 
@@ -347,7 +370,9 @@ namespace RocketDesigner
 			p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
 			p.Start();
 			p.WaitForExit();
-			MessageBox.Show("Aerodynamic coefficients have been calculated correctly");
+
+			if(box)
+				MessageBox.Show("Aerodynamic coefficients have been calculated correctly");
 
 			var fileName = folderPath + "ras2.txt";
 			if (System.IO.File.Exists(fileName))
@@ -418,8 +443,11 @@ namespace RocketDesigner
 			{
 
 			}
+		}
 
-
+		private void calculateAeroImpl(PluginActionArgs args)
+		{
+			calculAeroCoef(args, true);
 		}
 
 
@@ -436,6 +464,7 @@ namespace RocketDesigner
 			yield return create2D;
 			yield return create3D;
 			yield return createOpenRocket;
+			yield return launchSimu;
 		}
 		// Expose the control to the Hosting application
 		public override System.Collections.Generic.IEnumerable<PluginControl> GetControls()
@@ -446,6 +475,7 @@ namespace RocketDesigner
 			yield return create2DBtn;
 			yield return create3DBtn;
 			yield return createOpenRocketBtn;
+			yield return launchSimuBtn;
 		}
 
 		public override void ApplicationQuit()
@@ -694,7 +724,7 @@ namespace RocketDesigner
 
 			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
 			sys.Name = "top_attach";
-			sys.Position.SetPropertyFormula("Rotation2", "-90");
+			//sys.Position.SetPropertyFormula("Rotation2", "-90");
 
 
 

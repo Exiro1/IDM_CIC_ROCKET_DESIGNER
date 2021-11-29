@@ -1,9 +1,11 @@
 ﻿using IdmCic;
+using IdmCic.API.Model.Mainsystem;
 using IdmCic.API.Model.Physics;
 using IdmCic.API.Model.Subsystems;
 using Microsoft.Office.Interop.Excel;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -28,6 +30,95 @@ namespace RocketDesigner
 			staticMargin(assemb);
 			CNa(assemb);
 		}
+
+		public void startSimu(Element e, Rocket r)
+		{
+			IdmCic.API.Model.Physics.Point dry = e.GetCog(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.None);
+			IdmCic.API.Model.Physics.Point wet = e.GetCog(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.IncludeTankContent);
+
+			double dryMass = e.GetMass(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.None);
+			double wetMass = e.GetMass(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.IncludeTankContent);
+			Matrix Idry = e.GetInertiaMatrix(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.None);
+			Matrix Iwet = e.GetInertiaMatrix(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.IncludeTankContent);
+
+			double cogC = (wet.Z*1000 - dry.Z*1000) / (wetMass - dryMass);
+			double cogO = dry.Z*1000 - dryMass * cogC ;
+
+			double IC = (Iwet.Xx - Idry.Xx) / (wetMass - dryMass);
+			double IO = Idry.Xx - dryMass * IC;
+
+			object cp = getCP(600);
+			object ca = getCA(600);
+			object cn = getCN(600);
+
+			double Fi = 50000;
+
+			double sref = 2;
+
+			double ergolMass = wetMass - dryMass;
+
+
+
+			var fileName = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test");
+			MLApp.MLApp matlab = new MLApp.MLApp();
+			matlab.Visible = 1;
+			matlab.Execute(@"cd C:\Users\cgene\OneDrive\Documents\idm_files\matlab");
+
+			object result = null;
+		
+			System.Array input = new double[10];
+			matlab.Feval("simu3ddl2", 4, out result, (double)IC, (double)IO, (double)wetMass, (double)Fi, ca, cp, cn, (double)sref, (double)r.getLen()*1000, (double)ergolMass,cogC,cogO);
+			//matlab.Feval("simu3ddl2", 2, out result, 1,2);
+
+			object[] res = result as object[];
+
+
+
+		}
+		
+
+		static object getCP(int size)
+		{
+			Microsoft.Office.Interop.Excel.Application app = (Microsoft.Office.Interop.Excel.Application)System.Runtime.InteropServices.Marshal.GetActiveObject("Excel.Application");
+			Microsoft.Office.Interop.Excel._Worksheet sheet = (_Worksheet)app.ActiveSheet;
+			var r = sheet.Range["M2"].Resize[size, 1];
+			var array = (object[,]) r.Value;
+			double[] d = new double[size];
+			for (int i = 1; i < size; i++)
+			{
+				d[i] = (double)array[i, 1];
+			}
+			return (object)d;
+		}
+		static object getCN(int size)
+		{
+			Microsoft.Office.Interop.Excel.Application app = (Microsoft.Office.Interop.Excel.Application)System.Runtime.InteropServices.Marshal.GetActiveObject("Excel.Application");
+			Microsoft.Office.Interop.Excel._Worksheet sheet = (_Worksheet)app.ActiveSheet;
+			var r = sheet.Range["L2"].Resize[size, 1];
+			var array = (object[,]) r.Value;
+			double[] d = new double[size];
+			for (int i = 1; i < size; i++)
+			{
+				d[i] = (double)array[i, 1];
+			}
+			return (object)d;
+		}
+		static object getCA(int size)
+		{
+			Microsoft.Office.Interop.Excel.Application app = (Microsoft.Office.Interop.Excel.Application)System.Runtime.InteropServices.Marshal.GetActiveObject("Excel.Application");
+			Microsoft.Office.Interop.Excel._Worksheet sheet = (_Worksheet)app.ActiveSheet;
+			var r = sheet.Range["G2"].Resize[600, 1];
+			var array = (object[,]) r.Value;
+			double[] d = new double[size];
+			for (int i = 1; i < size; i++)
+			{
+				d[i] = (double)array[i, 1];
+			}
+			return (object)d;
+		}
+
+		
+
 
 		#region Excel Chart
 		public void staticMargin(Assembly assemb)

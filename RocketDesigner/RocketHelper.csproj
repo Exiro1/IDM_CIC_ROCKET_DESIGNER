@@ -70,6 +70,15 @@
     <Compile Include="RocketElement.cs" />
   </ItemGroup>
   <ItemGroup>
+    <COMReference Include="MLApp">
+      <Guid>{C36E46AB-6A81-457B-9F91-A7719A06287F}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
     <COMReference Include="SwConst">
       <Guid>{4687F359-55D0-4CD3-B6CF-2EB42C11F989}</Guid>
       <VersionMajor>29</VersionMajor>
