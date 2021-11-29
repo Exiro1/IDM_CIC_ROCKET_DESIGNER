@@ -62,7 +62,7 @@ namespace RocketDesigner
 			var fileName = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test");
 			MLApp.MLApp matlab = new MLApp.MLApp();
 			matlab.Visible = 1;
-			matlab.Execute(@"cd C:\Users\cgene\OneDrive\Documents\idm_files\matlab");
+			matlab.Execute(@"cd "+ fileName+"\\matlab");
 
 			object result = null;
 		
