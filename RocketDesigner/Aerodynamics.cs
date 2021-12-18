@@ -50,6 +50,8 @@ namespace RocketDesigner
 			object cp = getCP(600);
 			object ca = getCA(600);
 			object cn = getCN(600);
+			object thrust = getThrust(r);
+
 
 			double Fi = 50000;
 
@@ -67,7 +69,7 @@ namespace RocketDesigner
 			object result = null;
 		
 			System.Array input = new double[10];
-			matlab.Feval("simu3ddl2", 4, out result, (double)IC, (double)IO, (double)wetMass, (double)Fi, ca, cp, cn, (double)sref, (double)r.getLen()*1000, (double)ergolMass,cogC,cogO);
+			matlab.Feval("simu3ddl2", 4, out result, (double)IC, (double)IO, (double)wetMass, thrust, ca, cp, cn, (double)sref, (double)r.getLen()*1000, (double)ergolMass,cogC,cogO,r.getEngine().getAs());
 			//matlab.Feval("simu3ddl2", 2, out result, 1,2);
 
 			object[] res = result as object[];
@@ -76,6 +78,11 @@ namespace RocketDesigner
 
 		}
 		
+		static object getThrust(Rocket r) {
+			Engine eng = (Engine)r.getEngine();
+			eng.unpack();
+			return (object)eng.values;
+		}
 
 		static object getCP(int size)
 		{
@@ -86,7 +93,8 @@ namespace RocketDesigner
 			double[] d = new double[size];
 			for (int i = 1; i < size; i++)
 			{
-				d[i] = (double)array[i, 1];
+				
+				d[i] = toMeter((double)array[i, 1]);
 			}
 			return (object)d;
 		}
@@ -243,7 +251,7 @@ namespace RocketDesigner
 			return 0;
 
 		}
-		public double toMeter(double inch)
+		static double toMeter(double inch)
 		{
 			return Math.Round(inch / 39.3701, 3);
 		}

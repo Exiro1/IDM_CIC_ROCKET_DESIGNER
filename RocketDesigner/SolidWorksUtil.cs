@@ -20,9 +20,11 @@ namespace RocketDesigner
 
 		public SolidWorksUtil()
 		{
+			return;
 			using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
 			using (var key = hklm.OpenSubKey(@"Software\SolidWorks"))
 			{
+				
 				if (key == null)
 				{
 					// Doesn't exist...

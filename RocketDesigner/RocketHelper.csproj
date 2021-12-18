@@ -59,6 +59,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Aerodynamics.cs" />
+    <Compile Include="Datagen.cs" />
+    <Compile Include="Engine.cs" />
     <Compile Include="SolidWorksUtil.cs" />
     <Compile Include="Transition.cs" />
     <Compile Include="Body.cs" />

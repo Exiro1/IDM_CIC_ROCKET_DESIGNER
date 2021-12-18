@@ -12,7 +12,7 @@ namespace RocketDesigner
 {
 	public class Rocket
 	{
-
+		private Engine engine;
 		private Nosecone nose;
 		public Dictionary<string, RocketElement> elems;
 		Assembly assembly;
@@ -26,6 +26,11 @@ namespace RocketDesigner
 		public void addElement(RocketElement element)
 		{
 			elems[element.Name] = element;
+		}
+
+		public Engine getEngine()
+		{
+			return engine;
 		}
 
 		public RocketElement getElement(string name)
@@ -62,7 +67,7 @@ namespace RocketDesigner
 		}
 
 
-		public string generateOpenRocketFile(string path)
+		public string generateOpenRocketFile(string path,string name)
 		{
 			string filename = path;
 			XmlTextWriter xmlTextWriter2 = new XmlTextWriter(filename, null);
@@ -77,7 +82,7 @@ namespace RocketDesigner
 			xmlTextWriter2.WriteAttributeString("creator", "OpenRocket 15.03dev");
 			xmlTextWriter2.WriteStartElement("rocket");
 
-			xmlTextWriter2.WriteElementString("name", "testttt");
+			xmlTextWriter2.WriteElementString("name", name);
 			//xmlTextWriter2.WriteElementString("motorconfiguration", "Sheet Metal");
 			xmlTextWriter2.WriteElementString("referencetype", "maximum");
 
@@ -243,6 +248,13 @@ namespace RocketDesigner
 					Transition tr = new Transition((double)e.GetProperty("transiH").Value, (double)e.GetProperty("transiTopR").Value, (double)e.GetProperty("transiBotR").Value, (double)e.GetProperty("transiDe").Value, (double)e.GetProperty("transiTh").Value);
 					tr.Name = e.Name;
 					r.addElement(tr);
+				}
+				else if (e.GetProperty("RocketEngine") != null)
+				{
+					Engine eng = new Engine(e.GetDocument("1").GetFullFilePath(), (double)e.GetProperty("engNr").Value) ;
+					eng.Name = e.Name;
+					r.addElement(eng);
+					r.engine = eng;
 				}
 			}
 			foreach (EquipmentInstance ei in rocket.EquipmentInstances.ToList())
