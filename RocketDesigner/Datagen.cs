@@ -14,7 +14,7 @@ namespace RocketDesigner
 		static string folderPath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\");
 
 
-		public enum Parameters { SWEEP, TIPCHORD, THICKNESS, CHORD, POSITION, SPAN};
+		public enum Parameters { SWEEP, TIPCHORD, THICKNESS, CHORD, POSITION, SPAN, LEANGLE, TEANGLE};
 
 		Random ran;
 		public Datagen()
@@ -47,6 +47,7 @@ namespace RocketDesigner
 
 			object result = null;
 			matlab.PutWorkspaceData("data", "base", globalData);
+			matlab.Execute("figure");
 			matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, 3)); title(\"Ca = fct(" + param[0].ToString() + "," + param[1].ToString() + ")\");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"Ca\")");
 			matlab.Execute("figure");
 			matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, 4)); title(\"Cnalpha = fct(" + param[0].ToString() + "," + param[1].ToString() + ")\");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"CNalpha\")");
@@ -151,6 +152,12 @@ namespace RocketDesigner
 					break;
 				case Parameters.SPAN:
 					f.span = ran;
+					break;
+				case Parameters.LEANGLE:
+					f.sweepDist = f.span/Math.Tan(ran);
+					break;
+				case Parameters.TEANGLE:
+					f.TipChord = f.chord-f.sweepDist-f.span/Math.Tan(ran);
 					break;
 			}
 			return ran;

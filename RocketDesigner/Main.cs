@@ -258,13 +258,13 @@ namespace RocketDesigner
 					{
 						Datagen g = new Datagen();
 
-						Datagen.Parameters[] param = { Datagen.Parameters.THICKNESS, Datagen.Parameters.SWEEP};
+						Datagen.Parameters[] param = { Datagen.Parameters.LEANGLE, Datagen.Parameters.TEANGLE};
 						double[,] lim = new double[2, 2];
-						lim[0, 1] = 0.1;
-						lim[0, 0] = 0.01;
-						lim[1, 1] = 1;
-						lim[1, 0] = 0.1;
-						g.generatePatch(r, param, lim, 100);
+						lim[0, 1] = 35*Math.PI/180;
+						lim[0, 0] = 10*Math.PI/180;
+						lim[1, 1] = 89*Math.PI/180;
+						lim[1, 0] = 70*Math.PI/180;
+						g.generatePatch(r, param, lim, 30);
 
 
 
