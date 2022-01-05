@@ -186,18 +186,18 @@
             this.info_label.AutoSize = true;
             this.info_label.Location = new System.Drawing.Point(649, 23);
             this.info_label.Name = "info_label";
-            this.info_label.Size = new System.Drawing.Size(89, 13);
+            this.info_label.Size = new System.Drawing.Size(88, 13);
             this.info_label.TabIndex = 15;
-            this.info_label.Text = "(meters / radians)";
+            this.info_label.Text = "(meters / degree)";
             // 
             // label2
             // 
             this.label2.AutoSize = true;
             this.label2.Location = new System.Drawing.Point(649, 69);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(89, 13);
+            this.label2.Size = new System.Drawing.Size(88, 13);
             this.label2.TabIndex = 17;
-            this.label2.Text = "(meters / radians)";
+            this.label2.Text = "(meters / degree)";
             // 
             // BatchGenerator
             // 
@@ -223,6 +223,7 @@
             this.Controls.Add(this.batchNumber_Numeric);
             this.Name = "BatchGenerator";
             this.Text = "BatchGenerator";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.BatchGenerator_FormClosed);
             this.Load += new System.EventHandler(this.BatchGenerator_Load);
             ((System.ComponentModel.ISupportInitialize)(this.batchNumber_Numeric)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.min1_Numeric)).EndInit();

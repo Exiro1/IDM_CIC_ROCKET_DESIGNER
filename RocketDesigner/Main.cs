@@ -133,8 +133,10 @@ namespace RocketDesigner
 
 		Aerodynamics aerodynamics;
 		SolidWorksUtil swUtil;
+		Matlab matlabUtil;
 		public override void Initialise()
 		{
+
 			aerodynamics = new Aerodynamics();
 			calculateAero = new PluginAction("calculateAero", calculateAeroImpl);
 			openRas = new PluginAction("openRas", openRASImpl);
@@ -154,37 +156,47 @@ namespace RocketDesigner
 			launchSimuBtn = new PluginButton("launchSimu_button", "Launch Simulation", launchSimu, "Rocket Designer", "Aerodynamics");
 			generateBatchBtn = new PluginButton("generateBatch_button", "Generate Data", generateBatch, "Rocket Designer", "Aerodynamics");
 			//IdmCic_tab
-			calculateAeroBtn.IsVisibleAtStartUp = true;
+
+
+
+			swUtil = new SolidWorksUtil();
+			matlabUtil = new Matlab();
+			
+
+			bool swavailable = swUtil.isInstalled();
+			bool matlabAvailable = matlabUtil.isInstalled();
+
+			calculateAeroBtn.IsVisibleAtStartUp = false;
 			calculateAeroBtn.IsVisibleAfterLoadingMainSystem = true;
 			calculateAeroBtn.LargeStyle = true;
 
-			checkbox.IsVisibleAtStartUp = true;
-			checkbox.IsVisibleAfterLoadingMainSystem = true;
+			checkbox.IsVisibleAtStartUp = false;
+			checkbox.IsVisibleAfterLoadingMainSystem = swavailable;
 			checkbox.Checked = false;
 
-			OpenRASBtn.IsVisibleAtStartUp = true;
+			OpenRASBtn.IsVisibleAtStartUp = false;
 			OpenRASBtn.IsVisibleAfterLoadingMainSystem = true;
 			OpenRASBtn.LargeStyle = true;
 
-			createOpenRocketBtn.IsVisibleAtStartUp = true;
+			createOpenRocketBtn.IsVisibleAtStartUp = false;
 			createOpenRocketBtn.IsVisibleAfterLoadingMainSystem = true;
 			createOpenRocketBtn.LargeStyle = true;
 
-			create2DBtn.IsVisibleAtStartUp = true;
-			create2DBtn.IsVisibleAfterLoadingMainSystem = true;
+			create2DBtn.IsVisibleAtStartUp = false;
+			create2DBtn.IsVisibleAfterLoadingMainSystem = swavailable;
 			create2DBtn.LargeStyle = true;
 
-			create3DBtn.IsVisibleAtStartUp = true;
-			create3DBtn.IsVisibleAfterLoadingMainSystem = true;
+			create3DBtn.IsVisibleAtStartUp = false;
+			create3DBtn.IsVisibleAfterLoadingMainSystem = swavailable;
 			create3DBtn.LargeStyle = true;
 
 
-			launchSimuBtn.IsVisibleAtStartUp = true;
-			launchSimuBtn.IsVisibleAfterLoadingMainSystem = true;
+			launchSimuBtn.IsVisibleAtStartUp = false;
+			launchSimuBtn.IsVisibleAfterLoadingMainSystem = matlabAvailable;
 			launchSimuBtn.LargeStyle = true;
 
-			generateBatchBtn.IsVisibleAtStartUp = true;
-			generateBatchBtn.IsVisibleAfterLoadingMainSystem = true;
+			generateBatchBtn.IsVisibleAtStartUp = false;
+			generateBatchBtn.IsVisibleAfterLoadingMainSystem = matlabAvailable;
 			generateBatchBtn.LargeStyle = true;
 
 
@@ -216,7 +228,7 @@ namespace RocketDesigner
 			EngineFileAddButton = new PluginObjectButton("engine_file_add_button", "set Engine .eng File", EngineFileAddAction);
 
 
-			swUtil = new SolidWorksUtil();
+			
 
 
 		}
@@ -273,7 +285,7 @@ namespace RocketDesigner
 					if (r != null)
 					{
 						calculAeroCoef(args, false);
-						aerodynamics.startSimu(e,r);
+						aerodynamics.startSimu(e,r,matlabUtil);
 					}
 				}
 			}
@@ -292,9 +304,10 @@ namespace RocketDesigner
 					{
 						BatchGenerator f = new BatchGenerator();
 						f.ShowDialog();
+						if (f.cancel)
+							return;
 
-
-						Datagen g = new Datagen();
+						Datagen g = new Datagen(matlabUtil);
 
 						ParametersEnum.Parameters[] param = { (ParametersEnum.Parameters)f.p1, (ParametersEnum.Parameters)f.p2 };
 

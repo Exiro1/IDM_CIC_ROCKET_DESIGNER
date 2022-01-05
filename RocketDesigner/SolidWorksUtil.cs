@@ -16,37 +16,54 @@ namespace RocketDesigner
 	{
 		static string folderPath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\");
 		SldWorks swApp;
-		private bool swinstalled = false;
+		private bool swInstalled = false;
+		private bool swAvailable = false;
 
 		public SolidWorksUtil()
 		{
-			return;
 			using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
 			using (var key = hklm.OpenSubKey(@"Software\SolidWorks"))
 			{
 				
 				if (key == null)
 				{
-					// Doesn't exist...
 					MessageBox.Show("Solidwoks n'est pas installé, certaines fonctionnalitées de Rocket Designer ne seront pas disponible");
 				}
 				else
 				{
-					swinstalled = true;
-					swApp = (SldWorks)Activator.CreateInstance(System.Type.GetTypeFromProgID("SldWorks.Application"));
-					swApp.Visible = false;
+					swInstalled = true;
 				}
 			}
 		}
 
+		public bool loadSW()
+        {
+			if (swAvailable) return true;
+			if (!swInstalled) return false;
+
+			swApp = (SldWorks)Activator.CreateInstance(System.Type.GetTypeFromProgID("SldWorks.Application"));
+			swAvailable = swApp != null;
+
+			if(!swAvailable) return false;
+			swApp.Visible = false;
+			return true;
+		}
+
+
+
 
 		public void switchVisible()
 		{
+			if (!loadSW())
+				return;
 			swApp.Visible = !swApp.Visible;
 		}
 
 		public void updateSWNoseFile(double r, double h, double th)
 		{
+			if (!loadSW())
+				return;
+
 			int err = 0;
 			int warn = 0;
 
@@ -160,6 +177,10 @@ namespace RocketDesigner
 
 		public void create2DSketch(Rocket rocket, bool withFins, double front, double end, double h2d)
 		{
+
+			if (!loadSW())
+				return;
+
 			int err = 0;
 			int warn = 0;
 
@@ -309,6 +330,9 @@ namespace RocketDesigner
 
 		public void createBody(ref double x, ref double y, int h, int r, ModelDoc2 Part, ref int pointNbr, ref int dimNbr)
 		{
+			if (!loadSW())
+				return;
+
 			Dimension myDimension;
 			Part.Extension.SelectByID2("Esquisse", "SKETCH", 0, 0, 0, false, 0, null, 0);
 			Part.EditSketch();
@@ -357,6 +381,10 @@ namespace RocketDesigner
 
 		public void endRocket(ref double x, ref double y, double front, double end, double h, ModelDoc2 Part, ref int pointNbr, ref int dimNbr)
 		{
+
+			if (!loadSW())
+				return;
+
 			Part.Extension.SelectByID2("Esquisse", "SKETCH", 0, 0, 0, false, 0, null, 0);
 			Part.EditSketch();
 			Part.ClearSelection2(true);
@@ -436,7 +464,7 @@ namespace RocketDesigner
 
 		internal void close()
 		{
-			if (swinstalled)
+			if (swAvailable)
 				swApp.ExitApp();
 		}
 
@@ -464,6 +492,9 @@ namespace RocketDesigner
 
 		public void stepToBody(string stp)
 		{
+			if (!loadSW())
+				return;
+
 			int err = 0;
 			int warn = 0;
 
@@ -505,6 +536,9 @@ namespace RocketDesigner
 
 		public void sketch3D(int angle, double h, double l1, double l2)
 		{
+			if (!loadSW())
+				return;
+
 			//
 			int err = 0;
 			int warn = 0;
@@ -617,8 +651,13 @@ namespace RocketDesigner
 
 		internal bool isAvailable()
 		{
-			return swinstalled;
+			return swAvailable;
 		}
+
+		public bool isInstalled()
+        {
+			return swInstalled;
+        }
 	}
 
 }

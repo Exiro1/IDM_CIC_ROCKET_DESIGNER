@@ -27,6 +27,12 @@ namespace RocketDesigner
         public ParametersEnum.Parameters p1;
         public ParametersEnum.Parameters p2;
         public double min1, min2, max1, max2;
+        public bool cancel = false;
+
+        private void BatchGenerator_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            cancel = true; 
+        }
 
         private void BatchGenerator_Load(object sender, EventArgs e)
         {
@@ -59,10 +65,24 @@ namespace RocketDesigner
         {
             p1 = (ParametersEnum.Parameters)param1_comboBox.SelectedItem;
             p2 = (ParametersEnum.Parameters)param2_comboBox.SelectedItem;
+            
             min1 = (double)min1_Numeric.Value;
             min2 = (double)min2_Numeric.Value;
             max1 = (double)max1_Numeric.Value;
             max2 = (double)max2_Numeric.Value;
+
+            if (p1 == ParametersEnum.Parameters.LEANGLE || p1 == ParametersEnum.Parameters.TEANGLE)
+            {
+                min1 *= Math.PI / 180;
+                max1 *= Math.PI / 180;
+            }
+
+            if (p2 == ParametersEnum.Parameters.LEANGLE || p2 == ParametersEnum.Parameters.TEANGLE)
+            {
+                min2 *= Math.PI / 180;
+                max2 *= Math.PI / 180;
+            }
+
             nbr = (int)batchNumber_Numeric.Value;
             Close();
         }

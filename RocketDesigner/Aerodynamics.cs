@@ -31,7 +31,7 @@ namespace RocketDesigner
 			CNa(assemb);
 		}
 
-		public void startSimu(Element e, Rocket r)
+		public void startSimu(Element e, Rocket r, Matlab matlab)
 		{
 			IdmCic.API.Model.Physics.Point dry = e.GetCog(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.None);
 			IdmCic.API.Model.Physics.Point wet = e.GetCog(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.IncludeTankContent);
@@ -60,20 +60,14 @@ namespace RocketDesigner
 			double ergolMass = wetMass - dryMass;
 
 
-
-			var fileName = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test");
-			MLApp.MLApp matlab = new MLApp.MLApp();
-			matlab.Visible = 1;
-			matlab.Execute(@"cd "+ fileName+"\\matlab");
-
-			object result = null;
-		
-			System.Array input = new double[10];
-			matlab.Feval("simu3ddl2", 4, out result, (double)IC, (double)IO, (double)wetMass, thrust, ca, cp, cn, (double)sref, (double)r.getLen()*1000, (double)ergolMass,cogC,cogO,r.getEngine().getAs());
-			//matlab.Feval("simu3ddl2", 2, out result, 1,2);
-
-			object[] res = result as object[];
-
+			if (matlab.loadMatlab())
+			{
+				object result = null;
+				System.Array input = new double[10];
+				matlab.getMatlabInstance().Feval("simu3ddl2", 4, out result, (double)IC, (double)IO, (double)wetMass, thrust, ca, cp, cn, (double)sref, (double)r.getLen() * 1000, (double)ergolMass, cogC, cogO, r.getEngine().getAs());
+				//matlab.Feval("simu3ddl2", 2, out result, 1,2);
+				object[] res = result as object[];
+			}
 
 
 		}

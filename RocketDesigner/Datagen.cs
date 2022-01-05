@@ -14,9 +14,11 @@ namespace RocketDesigner
 		static string folderPath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\");
 
 		Random ran;
-		public Datagen()
+		Matlab matlab;
+		public Datagen(Matlab matlab)
 		{
 			ran = new Random();
+			this.matlab = matlab;
 		}
 
 		public void generatePatch(Rocket start, ParametersEnum.Parameters[] param, double[,] limits, int count)
@@ -38,19 +40,7 @@ namespace RocketDesigner
 					j++;
 				}
 			}
-			MLApp.MLApp matlab = new MLApp.MLApp();
-			matlab.Visible = 1;
-			matlab.Execute(@"cd " + folderPath + "\\matlab");
-
-			object result = null;
-			matlab.PutWorkspaceData("data", "base", globalData);
-			matlab.Execute("figure");
-			matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, 3)); title(\"Ca = fct(" + param[0].ToString() + "," + param[1].ToString() + ")\");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"Ca\")");
-			matlab.Execute("figure");
-			matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, 4)); title(\"Cnalpha = fct(" + param[0].ToString() + "," + param[1].ToString() + ")\");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"CNalpha\")");
-			matlab.Execute("figure");
-			matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, 5)); title(\"CP = fct(" + param[0].ToString() + "," + param[1].ToString() + ") (distance from nose)  \");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"CP\")");
-
+			matlab.displayGraphs(param, globalData);
 		}
 
 

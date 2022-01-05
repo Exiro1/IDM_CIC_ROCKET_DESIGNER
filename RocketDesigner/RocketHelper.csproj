@@ -66,6 +66,7 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
+    <Compile Include="Matlab.cs" />
     <Compile Include="Parameters.cs" />
     <Compile Include="SolidWorksUtil.cs" />
     <Compile Include="Transition.cs" />
