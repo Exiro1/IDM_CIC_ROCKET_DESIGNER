@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\..\..\..\AppData\Roaming\idmcic_data\plugins\test\</OutputPath>
+    <OutputPath>..\..\..\..\..\..\..\AppData\Roaming\idmcic_data\plugins\test\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -33,7 +33,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="IdmCicApi">
-      <HintPath>..\..\..\..\..\AppData\Roaming\CNES\IDM-CIC\IdmCicApi.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\..\AppData\Roaming\CNES\IDM-CIC\IdmCicApi.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Office.Interop.Excel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
       <EmbedInteropTypes>False</EmbedInteropTypes>
@@ -60,6 +60,13 @@
     <Compile Include="Aerodynamics.cs" />
     <Compile Include="Datagen.cs" />
     <Compile Include="Engine.cs" />
+    <Compile Include="Form1.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form1.Designer.cs">
+      <DependentUpon>Form1.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Parameters.cs" />
     <Compile Include="SolidWorksUtil.cs" />
     <Compile Include="Transition.cs" />
     <Compile Include="Body.cs" />
@@ -89,6 +96,11 @@
       <Isolated>False</Isolated>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Form1.resx">
+      <DependentUpon>Form1.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

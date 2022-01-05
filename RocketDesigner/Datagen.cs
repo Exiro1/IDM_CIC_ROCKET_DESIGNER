@@ -9,12 +9,9 @@ using System.Threading.Tasks;
 
 namespace RocketDesigner
 {
-	class Datagen
+    partial class Datagen
 	{
 		static string folderPath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\");
-
-
-		public enum Parameters { SWEEP, TIPCHORD, THICKNESS, CHORD, POSITION, SPAN, LEANGLE, TEANGLE};
 
 		Random ran;
 		public Datagen()
@@ -22,7 +19,7 @@ namespace RocketDesigner
 			ran = new Random();
 		}
 
-		public void generatePatch(Rocket start, Parameters[] param, double[,] limits, int count)
+		public void generatePatch(Rocket start, ParametersEnum.Parameters[] param, double[,] limits, int count)
 		{
 			double[,] globalData = new double[count,3+param.Length];
 			for(int i = 0; i < count; i++)
@@ -52,7 +49,7 @@ namespace RocketDesigner
 			matlab.Execute("figure");
 			matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, 4)); title(\"Cnalpha = fct(" + param[0].ToString() + "," + param[1].ToString() + ")\");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"CNalpha\")");
 			matlab.Execute("figure");
-			matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, 5)); title(\"CP = fct(" + param[0].ToString() + "," + param[1].ToString() + ")\");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"CP\")");
+			matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, 5)); title(\"CP = fct(" + param[0].ToString() + "," + param[1].ToString() + ") (distance from nose)  \");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"CP\")");
 
 		}
 
@@ -117,12 +114,12 @@ namespace RocketDesigner
 		 *			min1 max1
 		 *			...
 		 */
-		public Double[] randomizeRocket(Rocket start, Parameters[] param, double[,] limits)
+		public Double[] randomizeRocket(Rocket start, ParametersEnum.Parameters[] param, double[,] limits)
 		{
 			Fin fin0 = getFin(start);
 			int i = 0;
 			double[] pa = new double[param.Length];
-			foreach(Parameters p in param)
+			foreach(ParametersEnum.Parameters p in param)
 			{
 				pa[i] = changeParameterRan(fin0, p, limits[i, 0], limits[i, 1]);
 				i++;
@@ -131,32 +128,32 @@ namespace RocketDesigner
 		}
 
 
-		public double changeParameterRan(Fin f, Parameters pm, double min, double max)
+		public double changeParameterRan(Fin f, ParametersEnum.Parameters pm, double min, double max)
 		{
 			double ran = randomizer(min, max);
 			switch (pm)
 			{
-				case Parameters.TIPCHORD:
+				case ParametersEnum.Parameters.TIPCHORD:
 					f.TipChord = ran;
 					break;
-				case Parameters.SWEEP:
+				case ParametersEnum.Parameters.SWEEP:
 					f.sweepDist = ran;
 					break;
-				case Parameters.THICKNESS:
+				case ParametersEnum.Parameters.THICKNESS:
 					f.thickness = ran;
 					break;
-				case Parameters.CHORD:
+				case ParametersEnum.Parameters.CHORD:
 					f.chord = ran;
 					break;
-				case Parameters.POSITION:
+				case ParametersEnum.Parameters.POSITION:
 					break;
-				case Parameters.SPAN:
+				case ParametersEnum.Parameters.SPAN:
 					f.span = ran;
 					break;
-				case Parameters.LEANGLE:
+				case ParametersEnum.Parameters.LEANGLE:
 					f.sweepDist = f.span/Math.Tan(ran);
 					break;
-				case Parameters.TEANGLE:
+				case ParametersEnum.Parameters.TEANGLE:
 					f.TipChord = f.chord-f.sweepDist-f.span/Math.Tan(ran);
 					break;
 			}

@@ -37,6 +37,7 @@ namespace RocketDesigner
 		private PluginAction create3D;
 		private PluginAction testCheck;
 		private PluginAction launchSimu;
+		private PluginAction generateBatch;
 
 		private PluginButton calculateAeroBtn;
 		private PluginButton OpenRASBtn;
@@ -44,6 +45,7 @@ namespace RocketDesigner
 		private PluginButton create2DBtn;
 		private PluginButton create3DBtn;
 		private PluginButton launchSimuBtn;
+		private PluginButton generateBatchBtn;
 		private PluginCheckBox checkbox;
 
 		private PluginObjectAction NoseConeAddAction;
@@ -88,6 +90,31 @@ namespace RocketDesigner
 			yield return EngineFileAddButton;
 		}
 
+		// Expose the action to the Hosting application
+		public override System.Collections.Generic.IEnumerable<PluginAction> GetActions()
+		{
+
+			yield return calculateAero;
+			yield return testCheck;
+			yield return openRas;
+			yield return create2D;
+			yield return create3D;
+			yield return createOpenRocket;
+			yield return launchSimu;
+			yield return generateBatch;
+		}
+		// Expose the control to the Hosting application
+		public override System.Collections.Generic.IEnumerable<PluginControl> GetControls()
+		{
+			yield return calculateAeroBtn;
+			yield return checkbox;
+			yield return OpenRASBtn;
+			yield return create2DBtn;
+			yield return create3DBtn;
+			yield return createOpenRocketBtn;
+			yield return launchSimuBtn;
+			yield return generateBatchBtn;
+		}
 
 		public override string Description
 		{
@@ -116,6 +143,7 @@ namespace RocketDesigner
 			create3D = new PluginAction("create3d", create3DImpl);
 			launchSimu = new PluginAction("launchSimu", launchSimuImpl);
 			testCheck = new PluginAction("test_action", SolidworksVisibleImpl);
+			generateBatch = new PluginAction("generateBatch", generateBatchImpl);
 
 			calculateAeroBtn = new PluginButton("calculateAero_button", "Calculate aero coef", calculateAero, "Rocket Designer", "Aerodynamics");
 			OpenRASBtn = new PluginButton("openRas_button", "Open RASAero II", openRas, "Rocket Designer", "File Creator");
@@ -124,6 +152,7 @@ namespace RocketDesigner
 			create3DBtn = new PluginButton("create2d_button", "Create 3D Sketch", create3D, "Rocket Designer", "File Creator");
 			checkbox = new PluginCheckBox("sw_visible", "SolidWorks Visible", testCheck, "Rocket Designer", "Other");
 			launchSimuBtn = new PluginButton("launchSimu_button", "Launch Simulation", launchSimu, "Rocket Designer", "Aerodynamics");
+			generateBatchBtn = new PluginButton("generateBatch_button", "Generate Data", generateBatch, "Rocket Designer", "Aerodynamics");
 			//IdmCic_tab
 			calculateAeroBtn.IsVisibleAtStartUp = true;
 			calculateAeroBtn.IsVisibleAfterLoadingMainSystem = true;
@@ -153,6 +182,10 @@ namespace RocketDesigner
 			launchSimuBtn.IsVisibleAtStartUp = true;
 			launchSimuBtn.IsVisibleAfterLoadingMainSystem = true;
 			launchSimuBtn.LargeStyle = true;
+
+			generateBatchBtn.IsVisibleAtStartUp = true;
+			generateBatchBtn.IsVisibleAfterLoadingMainSystem = true;
+			generateBatchBtn.LargeStyle = true;
 
 
 			/*
@@ -246,6 +279,37 @@ namespace RocketDesigner
 			}
 		}
 
+
+
+		public void generateBatchImpl(PluginActionArgs args)
+		{
+			foreach (Element e in args.MainSystem.Elements)
+			{
+				foreach (RelatedSubsystem s in e.RelatedSubsystems)
+				{
+					Rocket r = Rocket.getRocketFromElement(s);
+					if (r != null)
+					{
+						BatchGenerator f = new BatchGenerator();
+						f.ShowDialog();
+
+
+						Datagen g = new Datagen();
+
+						ParametersEnum.Parameters[] param = { (ParametersEnum.Parameters)f.p1, (ParametersEnum.Parameters)f.p2 };
+
+						double[,] lim = new double[2, 2];
+						lim[0, 1] = f.max1;
+						lim[0, 0] = f.min1;
+						lim[1, 1] = f.max2;
+						lim[1, 0] = f.min2;
+						g.generatePatch(r, param, lim, f.nbr);
+
+					}
+				}
+			}
+		}
+
 			public void createOpenRocketImpl(PluginActionArgs args)
 		{
 
@@ -256,18 +320,6 @@ namespace RocketDesigner
 					Rocket r = Rocket.getRocketFromElement(s);
 					if (r != null)
 					{
-						Datagen g = new Datagen();
-
-						Datagen.Parameters[] param = { Datagen.Parameters.LEANGLE, Datagen.Parameters.TEANGLE};
-						double[,] lim = new double[2, 2];
-						lim[0, 1] = 35*Math.PI/180;
-						lim[0, 0] = 10*Math.PI/180;
-						lim[1, 1] = 89*Math.PI/180;
-						lim[1, 0] = 70*Math.PI/180;
-						g.generatePatch(r, param, lim, 30);
-
-
-
 						string path;
 						SaveFileDialog saveFileDialog1 = new SaveFileDialog();
 						saveFileDialog1.Filter = "ORK (*.ork)|*.ork";
@@ -481,29 +533,7 @@ namespace RocketDesigner
 
 
 
-		// Expose the action to the Hosting application
-		public override System.Collections.Generic.IEnumerable<PluginAction> GetActions()
-		{
-
-			yield return calculateAero;
-			yield return testCheck;
-			yield return openRas;
-			yield return create2D;
-			yield return create3D;
-			yield return createOpenRocket;
-			yield return launchSimu;
-		}
-		// Expose the control to the Hosting application
-		public override System.Collections.Generic.IEnumerable<PluginControl> GetControls()
-		{
-			yield return calculateAeroBtn;
-			yield return checkbox;
-			yield return OpenRASBtn;
-			yield return create2DBtn;
-			yield return create3DBtn;
-			yield return createOpenRocketBtn;
-			yield return launchSimuBtn;
-		}
+		
 
 		public override void ApplicationQuit()
 		{
