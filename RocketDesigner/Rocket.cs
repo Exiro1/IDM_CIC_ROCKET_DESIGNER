@@ -251,10 +251,13 @@ namespace RocketDesigner
 				}
 				else if (e.GetProperty("RocketEngine") != null)
 				{
-					Engine eng = new Engine(e.GetDocument("1").GetFullFilePath(), (double)e.GetProperty("engNr").Value) ;
-					eng.Name = e.Name;
-					r.addElement(eng);
-					r.engine = eng;
+					if (e.GetDocument("1") != null)
+					{
+						Engine eng = new Engine(e.GetDocument("1").GetFullFilePath(), (double)e.GetProperty("engNr").Value);
+						eng.Name = e.Name;
+						r.addElement(eng);
+						r.engine = eng;
+					}
 				}
 			}
 			foreach (EquipmentInstance ei in rocket.EquipmentInstances.ToList())

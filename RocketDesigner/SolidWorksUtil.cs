@@ -56,7 +56,9 @@ namespace RocketDesigner
 		{
 			if (!loadSW())
 				return;
-			swApp.Visible = !swApp.Visible;
+			bool visible = !swApp.Visible;
+
+			swApp.Visible = visible;
 		}
 
 		public void updateSWNoseFile(double r, double h, double th)
