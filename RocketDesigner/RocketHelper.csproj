@@ -60,11 +60,11 @@
     <Compile Include="Aerodynamics.cs" />
     <Compile Include="Datagen.cs" />
     <Compile Include="Engine.cs" />
-    <Compile Include="Form1.cs">
+    <Compile Include="BatchGnerator.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Form1.Designer.cs">
-      <DependentUpon>Form1.cs</DependentUpon>
+    <Compile Include="BatchGnerator.Designer.cs">
+      <DependentUpon>BatchGnerator.cs</DependentUpon>
     </Compile>
     <Compile Include="Matlab.cs" />
     <Compile Include="Parameters.cs" />
@@ -99,8 +99,8 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Form1.resx">
-      <DependentUpon>Form1.cs</DependentUpon>
+    <EmbeddedResource Include="BatchGnerator.resx">
+      <DependentUpon>BatchGnerator.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

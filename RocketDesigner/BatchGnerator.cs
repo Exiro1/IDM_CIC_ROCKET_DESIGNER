@@ -27,11 +27,11 @@ namespace RocketDesigner
         public ParametersEnum.Parameters p1;
         public ParametersEnum.Parameters p2;
         public double min1, min2, max1, max2;
-        public bool cancel = false;
+        public bool cancel = true;
 
         private void BatchGenerator_FormClosed(object sender, FormClosedEventArgs e)
         {
-            cancel = true; 
+            
         }
 
         private void BatchGenerator_Load(object sender, EventArgs e)
@@ -59,8 +59,6 @@ namespace RocketDesigner
         public int nbr;
 
        
-         
-
         private void generate_button_Click(object sender, EventArgs e)
         {
             p1 = (ParametersEnum.Parameters)param1_comboBox.SelectedItem;
@@ -84,6 +82,7 @@ namespace RocketDesigner
             }
 
             nbr = (int)batchNumber_Numeric.Value;
+            cancel = false;
             Close();
         }
     }

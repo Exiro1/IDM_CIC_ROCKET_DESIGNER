@@ -554,6 +554,7 @@ namespace RocketDesigner
 			//aero.Close(false);
 
 			swUtil.close();
+			matlabUtil.close();
 
 
 

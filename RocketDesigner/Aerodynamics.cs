@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace RocketDesigner
 {
@@ -41,8 +42,8 @@ namespace RocketDesigner
 			Matrix Idry = e.GetInertiaMatrix(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.None);
 			Matrix Iwet = e.GetInertiaMatrix(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.IncludeTankContent);
 
-			double cogC = (wet.Z*1000 - dry.Z*1000) / (wetMass - dryMass);
-			double cogO = dry.Z*1000 - dryMass * cogC ;
+			double cogC = (wet.Z - dry.Z) / (wetMass - dryMass);
+			double cogO = dry.Z - dryMass * cogC ;
 
 			double IC = (Iwet.Xx - Idry.Xx) / (wetMass - dryMass);
 			double IO = Idry.Xx - dryMass * IC;
@@ -64,9 +65,17 @@ namespace RocketDesigner
 			{
 				object result = null;
 				System.Array input = new double[10];
-				matlab.getMatlabInstance().Feval("simu3ddl2", 4, out result, (double)IC, (double)IO, (double)wetMass, thrust, ca, cp, cn, (double)sref, (double)r.getLen() * 1000, (double)ergolMass, cogC, cogO, r.getEngine().getAs());
+				matlab.getMatlabInstance().Feval("simu3ddl2", 4, out result, (double)IC, (double)IO, (double)wetMass, thrust, ca, cp, cn, (double)sref, (double)r.getLen(), (double)ergolMass, cogC, cogO, r.getEngine().getAs(), 0);
 				//matlab.Feval("simu3ddl2", 2, out result, 1,2);
 				object[] res = result as object[];
+				matlab.getMatlabInstance().Execute("save('simData')");
+				string status = (string) res[3];
+				MessageBox.Show("Status du vol : "+status.Split(';')[0]+"\n"+
+					"Altitude max : " + status.Split(';')[1] + " m\n" +
+					"Marge statique min : " + status.Split(';')[2] + " m\n" +
+					"Qinf max : " + status.Split(';')[3] + " Pa\n" +
+					"Mach max : " + status.Split(';')[4] + "\n"
+				);
 			}
 
 
