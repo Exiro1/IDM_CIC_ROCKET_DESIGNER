@@ -14,7 +14,7 @@ namespace RocketDesigner
 {
 	class SolidWorksUtil
 	{
-		static string folderPath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\");
+
 		SldWorks swApp;
 		private bool swInstalled = false;
 		private bool swAvailable = false;
@@ -38,6 +38,17 @@ namespace RocketDesigner
 
 		public bool loadSW()
         {
+            if (swAvailable)
+            {
+                try
+                {
+					bool error = swApp.Visible;
+				}catch(Exception ex)
+                {
+					swAvailable = false;
+                }
+            }
+
 			if (swAvailable) return true;
 			if (!swInstalled) return false;
 
@@ -47,15 +58,29 @@ namespace RocketDesigner
 			if(!swAvailable) return false;
 			swApp.Visible = false;
 			return true;
+
 		}
 
 
+		SolidWorksException solidWorksNotStartedException()
+        {
+			throw new SolidWorksException("Solidworks hasn't started");
+		}
+
+		public void restart()
+        {
+			swApp = null;
+			swAvailable = false;
+        }
 
 
 		public void switchVisible()
 		{
 			if (!loadSW())
 				return;
+			if (swApp == null)
+				solidWorksNotStartedException();
+
 			bool visible = !swApp.Visible;
 
 			swApp.Visible = visible;
@@ -66,105 +91,108 @@ namespace RocketDesigner
 			if (!loadSW())
 				return;
 
+			if (swApp == null)
+				solidWorksNotStartedException();
+
 			int err = 0;
-			int warn = 0;
+				int warn = 0;
 
-			double x = 0;
-			double y = 0;
+				double x = 0;
+				double y = 0;
 
-			var fileName = folderPath + "Pièce.SLDPRT";
+				var fileName = Main.folderPath + "Pièce.SLDPRT";
 
-			//((int)swUserPreferenceStringValue_e.swDefaultTemplatePart)
-			swApp.NewDocument(swApp.GetUserPreferenceStringValue(8), 0, 0, 0);
+				//((int)swUserPreferenceStringValue_e.swDefaultTemplatePart)
+				swApp.NewDocument(swApp.GetUserPreferenceStringValue(8), 0, 0, 0);
 
-			swApp.ActivateDoc2("Pièce.SLDPRT", false, err);
+				swApp.ActivateDoc2("Pièce.SLDPRT", false, err);
 
-			ModelDoc2 Part = (ModelDoc2)swApp.ActiveDoc;
+				ModelDoc2 Part = (ModelDoc2)swApp.ActiveDoc;
 
-			var myModelView = Part.ActiveView;
-			swApp.SetUserPreferenceToggle((int)swUserPreferenceToggle_e.swInputDimValOnCreate, false);
+				var myModelView = Part.ActiveView;
+				swApp.SetUserPreferenceToggle((int)swUserPreferenceToggle_e.swInputDimValOnCreate, false);
 
-			Part.InsertSketch();
-			Part.Extension.SelectByID2("Plan de face", "PLANE", 0, 0, 0, false, 0, null, 0);
-			Part.ClearSelection2(true);
+				Part.InsertSketch();
+				Part.Extension.SelectByID2("Plan de face", "PLANE", 0, 0, 0, false, 0, null, 0);
+				Part.ClearSelection2(true);
 
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			//Part.SelectedFeatureProperties(0, 0, 0, 0, 0, 0, 0, true, false, "Esquisse");
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-
-
-			Part.SketchManager.CreateEquationSpline2("", "(( (" + r * r + "+" + h * h + ")/(2*" + r + ") )^2-(" + h + "-x)^2)^(1/2) + " + r + " - (" + r * r + "+" + h * h + ")/(2*" + r + ")", "", "0", "" + h, false, 0, 0, 0, true, true);
-
-			Part.ClearSelection2(true);
-
-			Part.SketchManager.InsertSketch(true);
-
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-
-			Part.SetPickMode();
-			Part.Extension.SelectByID2("Point3", "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			Part.Extension.SelectByID2("Point1@Origine", "EXTSKETCHPOINT", 0, 0, 0, true, 0, null, 0);
-			Part.SketchAddConstraints("sgCOINCIDENT");
-			Part.ClearSelection2(true);
-			Part.SketchManager.InsertSketch(true);
-
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-			Part.SketchManager.CreateLine(0, 0, 0, 10, 0, 0);
-			Part.ClearSelection2(true);
-			Part.SketchManager.InsertSketch(true);
+				Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+				//Part.SelectedFeatureProperties(0, 0, 0, 0, 0, 0, 0, true, false, "Esquisse");
+				Part.EditSketch();
+				Part.ClearSelection2(true);
 
 
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-			Part.SketchManager.CreateEquationSpline2("", "(( (" + r * r + "+" + h * h + ")/(2*" + r + ") )^2-(" + h + "-x)^2)^(1/2) + " + r + " - (" + r * r + "+" + h * h + ")/(2*" + r + ") - " + th, "", "0", "" + h, false, 0, 0, 0, true, true);
-			Part.ClearSelection2(true);
-			Part.SketchManager.InsertSketch(true);
+				Part.SketchManager.CreateEquationSpline2("", "(( (" + r * r + "+" + h * h + ")/(2*" + r + ") )^2-(" + h + "-x)^2)^(1/2) + " + r + " - (" + r * r + "+" + h * h + ")/(2*" + r + ")", "", "0", "" + h, false, 0, 0, 0, true, true);
 
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-			Part.SketchManager.CreateLine(h * 0.001, r * 0.001, 0, h * 0.001, (r - th) * 0.001, 0);
-			Part.ClearSelection2(true);
-			Part.SketchManager.InsertSketch(true);
+				Part.ClearSelection2(true);
 
+				Part.SketchManager.InsertSketch(true);
 
+				Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+				Part.EditSketch();
+				Part.ClearSelection2(true);
 
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.EditSketch();
-			Part.ClearSelection2(true);
+				Part.SetPickMode();
+				Part.Extension.SelectByID2("Point3", "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
+				Part.Extension.SelectByID2("Point1@Origine", "EXTSKETCHPOINT", 0, 0, 0, true, 0, null, 0);
+				Part.SketchAddConstraints("sgCOINCIDENT");
+				Part.ClearSelection2(true);
+				Part.SketchManager.InsertSketch(true);
 
-			Part.SetPickMode();
-			Part.Extension.SelectByID2("Spline4", "SKETCHSEGMENT", 0, 1, 0, true, 0, null, 0);
-			Part.Extension.SelectByID2("Line1", "SKETCHSEGMENT", 0, 0, 0, true, 0, null, 0);
-			Part.SketchManager.SketchTrim(1, 0, 0, 0);
-			Part.ClearSelection2(true);
-			Part.SketchManager.InsertSketch(true);
+				Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+				Part.EditSketch();
+				Part.ClearSelection2(true);
+				Part.SketchManager.CreateLine(0, 0, 0, 10, 0, 0);
+				Part.ClearSelection2(true);
+				Part.SketchManager.InsertSketch(true);
 
 
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.EditSketch();
-			Part.ClearSelection2(true);
-			Part.SketchManager.CreateCenterLine(0, 0, 0, 1, 0, 0);
-			Part.ClearSelection2(true);
-			Part.SketchManager.InsertSketch(true);
+				Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+				Part.EditSketch();
+				Part.ClearSelection2(true);
+				Part.SketchManager.CreateEquationSpline2("", "(( (" + r * r + "+" + h * h + ")/(2*" + r + ") )^2-(" + h + "-x)^2)^(1/2) + " + r + " - (" + r * r + "+" + h * h + ")/(2*" + r + ") - " + th, "", "0", "" + h, false, 0, 0, 0, true, true);
+				Part.ClearSelection2(true);
+				Part.SketchManager.InsertSketch(true);
 
-			Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
-			Part.Extension.SelectByID2("Line3@Esquisse1", "SKETCHSEGMENT", 0, 0, 0, true, 16, null, 0);
-			Part.FeatureManager.FeatureRevolve2(true, true, false, false, false, false, 0, 0, 6.2831853071796, 0, false, false, 0.01, 0.01, 0, 0, 0, true, true, true);
+				Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+				Part.EditSketch();
+				Part.ClearSelection2(true);
+				Part.SketchManager.CreateLine(h * 0.001, r * 0.001, 0, h * 0.001, (r - th) * 0.001, 0);
+				Part.ClearSelection2(true);
+				Part.SketchManager.InsertSketch(true);
 
-			((SelectionMgr)Part.SelectionManager).EnableContourSelection = false;
-			Part.ClearSelection2(true);
 
 
-			fileName = folderPath + "nosecone2.STEP";
-			Part.SaveAs3(fileName, 0, 2);
-			swApp.CloseDoc(Part.GetTitle());
+				Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+				Part.EditSketch();
+				Part.ClearSelection2(true);
+
+				Part.SetPickMode();
+				Part.Extension.SelectByID2("Spline4", "SKETCHSEGMENT", 0, 1, 0, true, 0, null, 0);
+				Part.Extension.SelectByID2("Line1", "SKETCHSEGMENT", 0, 0, 0, true, 0, null, 0);
+				Part.SketchManager.SketchTrim(1, 0, 0, 0);
+				Part.ClearSelection2(true);
+				Part.SketchManager.InsertSketch(true);
+
+
+				Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+				Part.EditSketch();
+				Part.ClearSelection2(true);
+				Part.SketchManager.CreateCenterLine(0, 0, 0, 1, 0, 0);
+				Part.ClearSelection2(true);
+				Part.SketchManager.InsertSketch(true);
+
+				Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+				Part.Extension.SelectByID2("Line3@Esquisse1", "SKETCHSEGMENT", 0, 0, 0, true, 16, null, 0);
+				Part.FeatureManager.FeatureRevolve2(true, true, false, false, false, false, 0, 0, 6.2831853071796, 0, false, false, 0.01, 0.01, 0, 0, 0, true, true, true);
+
+				((SelectionMgr)Part.SelectionManager).EnableContourSelection = false;
+				Part.ClearSelection2(true);
+
+
+				fileName = Main.folderPath + "nosecone2.STEP";
+				Part.SaveAs3(fileName, 0, 2);
+				swApp.CloseDoc(Part.GetTitle());
 
 		}
 
@@ -183,6 +211,9 @@ namespace RocketDesigner
 			if (!loadSW())
 				return;
 
+			if (swApp == null)
+				solidWorksNotStartedException();
+
 			int err = 0;
 			int warn = 0;
 
@@ -191,7 +222,7 @@ namespace RocketDesigner
 			int pnbr = 5;
 			int dimnbr = 2;
 
-			var fileName = folderPath + "Pièce.SLDPRT";
+			var fileName = Main.folderPath + "Pièce.SLDPRT";
 
 			swApp.NewDocument(swApp.GetUserPreferenceStringValue(((int)swUserPreferenceStringValue_e.swDefaultTemplatePart)), 0, 0, 0);
 
@@ -335,6 +366,9 @@ namespace RocketDesigner
 			if (!loadSW())
 				return;
 
+			if (swApp == null)
+				solidWorksNotStartedException();
+
 			Dimension myDimension;
 			Part.Extension.SelectByID2("Esquisse", "SKETCH", 0, 0, 0, false, 0, null, 0);
 			Part.EditSketch();
@@ -386,6 +420,9 @@ namespace RocketDesigner
 
 			if (!loadSW())
 				return;
+
+			if (swApp == null)
+				solidWorksNotStartedException();
 
 			Part.Extension.SelectByID2("Esquisse", "SKETCH", 0, 0, 0, false, 0, null, 0);
 			Part.EditSketch();
@@ -496,7 +533,8 @@ namespace RocketDesigner
 		{
 			if (!loadSW())
 				return;
-
+			if (swApp == null)
+				solidWorksNotStartedException();
 			int err = 0;
 			int warn = 0;
 
@@ -507,7 +545,7 @@ namespace RocketDesigner
 			swApp.SetUserPreferenceIntegerValue((int)swUserPreferenceIntegerValue_e.swImportNeutralAssemblyStructureMapping, (int)swImportNeutralAssemblyStructureMapping_e.swImportNeutralAssemblyStructureMapping_MultibodyPart);
 			swApp.SetUserPreferenceIntegerValue((int)swUserPreferenceIntegerValue_e.swImportNeutralAssemblyStructureMapping, 2);
 
-			var fileName = folderPath + stp;
+			var fileName = Main.folderPath + stp;
 			ImportStepData importStepData = swApp.GetImportFileData(fileName);
 
 			ModelDoc2 doc = swApp.LoadFile4(fileName, "C", importStepData, ref err);
@@ -531,7 +569,7 @@ namespace RocketDesigner
 			Part.FeatureManager.InsertCombineFeature(15903, null, null);
 
 
-			Part.SaveAs3(folderPath + "rocket.SLDPRT", 0, 2);
+			Part.SaveAs3(Main.folderPath + "rocket.SLDPRT", 0, 2);
 			swApp.CloseDoc(Part.GetTitle());
 		}
 
@@ -540,7 +578,8 @@ namespace RocketDesigner
 		{
 			if (!loadSW())
 				return;
-
+			if (swApp == null)
+				solidWorksNotStartedException();
 			//
 			int err = 0;
 			int warn = 0;
@@ -550,7 +589,7 @@ namespace RocketDesigner
 			int pnbr = 5;
 			int dimnbr = 2;
 
-			var fileName = folderPath + "Pièce.SLDPRT";
+			var fileName = Main.folderPath + "Pièce.SLDPRT";
 
 			swApp.NewDocument(swApp.GetUserPreferenceStringValue(((int)swUserPreferenceStringValue_e.swDefaultTemplatePart)), 0, 0, 0);
 
@@ -618,12 +657,12 @@ namespace RocketDesigner
 
 
 			Part.Extension.SelectByID2("Pièce.SLDPRT", "COMPONENT", 0, 0, 0, false, 0, null, 0);
-			Part.SaveAs3(folderPath + "cover.SLDPRT", 0, 0);
+			Part.SaveAs3(Main.folderPath + "cover.SLDPRT", 0, 0);
 			Part.ClearSelection2(true);
 			Part.EditRebuild3();
 			Part.Save3(1, ref err, ref warn);
 
-			((PartDoc)Part).InsertPart3(folderPath + "rocket.SLDPRT", 21, "Défaut");
+			((PartDoc)Part).InsertPart3(Main.folderPath + "rocket.SLDPRT", 21, "Défaut");
 
 			Part.Extension.SelectByID2("Boss.-Extru.1", "SOLIDBODY", 0, 0, 0, false, 1, null, 0);
 			Part.Extension.SelectByID2("<rocket>-<Combiner1>", "SOLIDBODY", 0, 0, 0, true, 2, null, 0);

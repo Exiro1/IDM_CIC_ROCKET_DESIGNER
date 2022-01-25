@@ -11,8 +11,7 @@ namespace RocketDesigner
 {
     partial class Datagen
 	{
-		static string folderPath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\");
-
+		
 		Random ran;
 		Matlab matlab;
 		public Datagen(Matlab matlab)
@@ -52,7 +51,7 @@ namespace RocketDesigner
 		{
 			string filec = r.generateXMLFile("datagen");
 			//r.generateOpenRocketFile(folderPath + "test.ork");
-			System.IO.File.Copy(filec, folderPath + "ras.CDX1", true);
+			System.IO.File.Copy(filec, Main.folderPath + "ras.CDX1", true);
 			
 
 			string assemblyFolder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
@@ -66,7 +65,7 @@ namespace RocketDesigner
 			p.Start();
 			p.WaitForExit();
 
-			var fileName = folderPath + "ras2.txt";
+			var fileName = Main.folderPath + "ras2.txt";
 			if (System.IO.File.Exists(fileName))
 				System.IO.File.Delete(fileName);
 

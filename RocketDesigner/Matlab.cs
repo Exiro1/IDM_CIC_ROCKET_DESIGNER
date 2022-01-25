@@ -12,9 +12,6 @@ namespace RocketDesigner
     internal class Matlab
     {
 
-		static string folderPath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\");
-
-
 		MLApp.MLApp matlab;
 
 		bool available = false;
@@ -40,8 +37,20 @@ namespace RocketDesigner
 		}
 
 		public bool loadMatlab()
-        {	
-			if(available)
+        {
+			if (available)
+			{
+				try
+				{
+					int error = matlab.Visible;
+				}
+				catch (Exception ex)
+				{
+					available = false;
+				}
+			}
+
+			if (available)
 				return true;
 			if(!isInstalled())
 				return false;
@@ -50,7 +59,7 @@ namespace RocketDesigner
 			if (matlab == null)
 				return false;
 			matlab.Visible = 0;
-			matlab.Execute(@"cd " + folderPath + "\\matlab");
+			matlab.Execute(@"cd " + Main.folderPath + "\\matlab");
 			available = true;
 			return true;
 		}

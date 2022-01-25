@@ -26,8 +26,8 @@ namespace RocketDesigner
 	public class Main : AbstractPlugin
 	{
 
-		static string folderPath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\");
-
+		public static string folderPath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\");
+		public static string version = "0.5.0";
 
 
 		private PluginAction calculateAero;
@@ -37,6 +37,7 @@ namespace RocketDesigner
 		private PluginAction create3D;
 		private PluginAction testCheck;
 		private PluginAction launchSimu;
+		private PluginAction launchSimu6ddl;
 		private PluginAction generateBatch;
 
 		private PluginButton calculateAeroBtn;
@@ -45,6 +46,7 @@ namespace RocketDesigner
 		private PluginButton create2DBtn;
 		private PluginButton create3DBtn;
 		private PluginButton launchSimuBtn;
+		private PluginButton launchSimu6ddlBtn;
 		private PluginButton generateBatchBtn;
 		private PluginCheckBox checkbox;
 
@@ -55,6 +57,8 @@ namespace RocketDesigner
 		private PluginObjectAction AssemblyAddAction;
 		private PluginObjectAction EngineAddAction;
 		private PluginObjectAction EngineFileAddAction;
+		private PluginObjectAction LtankAddAction;
+		private PluginObjectAction StankAddAction;
 
 		private PluginObjectButton NoseConeAddButton;
 		private PluginObjectButton FinsAddButton;
@@ -63,6 +67,8 @@ namespace RocketDesigner
 		private PluginObjectButton AssemblyAddButton;
 		private PluginObjectButton EngineAddButton;
 		private PluginObjectButton EngineFileAddButton;
+		private PluginObjectButton LtankAddButton;
+		private PluginObjectButton StankAddButton;
 
 		// Expose the action tothe Hosting application
 		public override System.Collections.Generic.IEnumerable<PluginObjectAction> GetObjectActions()
@@ -75,6 +81,8 @@ namespace RocketDesigner
 			yield return AssemblyAddAction;
 			yield return EngineAddAction;
 			yield return EngineFileAddAction;
+			yield return LtankAddAction;
+			yield return StankAddAction;
 		}
 
 		// Expose the control to the Hosting application
@@ -88,6 +96,8 @@ namespace RocketDesigner
 			yield return AssemblyAddButton;
 			yield return EngineAddButton;
 			yield return EngineFileAddButton;
+			yield return LtankAddButton;
+			yield return StankAddButton;
 		}
 
 		// Expose the action to the Hosting application
@@ -101,6 +111,7 @@ namespace RocketDesigner
 			yield return create3D;
 			yield return createOpenRocket;
 			yield return launchSimu;
+			yield return launchSimu6ddl;
 			yield return generateBatch;
 		}
 		// Expose the control to the Hosting application
@@ -113,6 +124,7 @@ namespace RocketDesigner
 			yield return create3DBtn;
 			yield return createOpenRocketBtn;
 			yield return launchSimuBtn;
+			yield return launchSimu6ddlBtn;
 			yield return generateBatchBtn;
 		}
 
@@ -126,7 +138,7 @@ namespace RocketDesigner
 		}
 		public override string Version
 		{
-			get { return "0.3.0"; }
+			get { return version; }
 		}
 
 		Excel.Workbook aero;
@@ -134,6 +146,7 @@ namespace RocketDesigner
 		Aerodynamics aerodynamics;
 		SolidWorksUtil swUtil;
 		Matlab matlabUtil;
+		ComponentCreator compCreator;
 		public override void Initialise()
 		{
 
@@ -144,6 +157,7 @@ namespace RocketDesigner
 			create2D = new PluginAction("create2d", create2DImpl);
 			create3D = new PluginAction("create3d", create3DImpl);
 			launchSimu = new PluginAction("launchSimu", launchSimuImpl);
+			launchSimu6ddl = new PluginAction("launchSimu6ddl", launchSimu6ddlImpl);
 			testCheck = new PluginAction("test_action", SolidworksVisibleImpl);
 			generateBatch = new PluginAction("generateBatch", generateBatchImpl);
 
@@ -153,7 +167,8 @@ namespace RocketDesigner
 			create2DBtn = new PluginButton("create2d_button", "Create 2D Sketch", create2D, "Rocket Designer", "File Creator");
 			create3DBtn = new PluginButton("create2d_button", "Create 3D Sketch", create3D, "Rocket Designer", "File Creator");
 			checkbox = new PluginCheckBox("sw_visible", "SolidWorks Visible", testCheck, "Rocket Designer", "Other");
-			launchSimuBtn = new PluginButton("launchSimu_button", "Launch Simulation", launchSimu, "Rocket Designer", "Aerodynamics");
+			launchSimuBtn = new PluginButton("launchSimu_button", "Launch Simulation 3DDL", launchSimu, "Rocket Designer", "Aerodynamics");
+			launchSimu6ddlBtn = new PluginButton("launchSimu_button", "Launch Simulation 6DDL", launchSimu6ddl, "Rocket Designer", "Aerodynamics");
 			generateBatchBtn = new PluginButton("generateBatch_button", "Generate Data", generateBatch, "Rocket Designer", "Aerodynamics");
 			//IdmCic_tab
 
@@ -161,7 +176,7 @@ namespace RocketDesigner
 
 			swUtil = new SolidWorksUtil();
 			matlabUtil = new Matlab();
-			
+			compCreator = new ComponentCreator();
 
 			bool swavailable = swUtil.isInstalled();
 			bool matlabAvailable = matlabUtil.isInstalled();
@@ -195,6 +210,10 @@ namespace RocketDesigner
 			launchSimuBtn.IsVisibleAfterLoadingMainSystem = matlabAvailable;
 			launchSimuBtn.LargeStyle = true;
 
+			launchSimu6ddlBtn.IsVisibleAtStartUp = false;
+			launchSimu6ddlBtn.IsVisibleAfterLoadingMainSystem = matlabAvailable;
+			launchSimu6ddlBtn.LargeStyle = true;
+
 			generateBatchBtn.IsVisibleAtStartUp = false;
 			generateBatchBtn.IsVisibleAfterLoadingMainSystem = matlabAvailable;
 			generateBatchBtn.LargeStyle = true;
@@ -211,13 +230,15 @@ namespace RocketDesigner
 			oXL.Visible = false;
 			*/
 
-			NoseConeAddAction = new PluginObjectAction("nosecone_add_action", typeof(Equipment), NoseConeAddActionImpl);
-			FinsAddAction = new PluginObjectAction("fins_add_action", typeof(Equipment), FinsAddActionImpl);
-			BodyAddAction = new PluginObjectAction("body_add_action", typeof(Equipment), BodyAddActionImpl);
-			TransiAddAction = new PluginObjectAction("transi_add_action", typeof(Equipment), TransitionAddActionImpl);
-			AssemblyAddAction = new PluginObjectAction("assembly_add_action", typeof(Assembly), AssemblyAddActionImpl);
-			EngineAddAction = new PluginObjectAction("engine_add_action", typeof(Equipment), EngineAddActionImpl);
-			EngineFileAddAction = new PluginObjectAction("engine_file_add_action", typeof(Equipment), EngineFileAddActionImpl);
+			NoseConeAddAction = new PluginObjectAction("nosecone_add_action", typeof(Equipment), compCreator.NoseConeAddActionImpl);
+			FinsAddAction = new PluginObjectAction("fins_add_action", typeof(Equipment), compCreator.FinsAddActionImpl);
+			BodyAddAction = new PluginObjectAction("body_add_action", typeof(Equipment), compCreator.BodyAddActionImpl);
+			TransiAddAction = new PluginObjectAction("transi_add_action", typeof(Equipment), compCreator.TransitionAddActionImpl);
+			AssemblyAddAction = new PluginObjectAction("assembly_add_action", typeof(Assembly), compCreator.AssemblyAddActionImpl);
+			EngineAddAction = new PluginObjectAction("engine_add_action", typeof(Equipment), compCreator.EngineAddActionImpl);
+			EngineFileAddAction = new PluginObjectAction("engine_file_add_action", typeof(Equipment), compCreator.EngineFileAddActionImpl);
+			LtankAddAction = new PluginObjectAction("liquid_tank_add_action", typeof(Equipment), compCreator.LiquidTankAddActionImpl);
+			StankAddAction = new PluginObjectAction("solid_tank_add_action", typeof(Equipment), compCreator.SolidTankAddActionImpl);
 
 			NoseConeAddButton = new PluginObjectButton("nosecone_add_button", "Add Rocket Nose cone", NoseConeAddAction);
 			FinsAddButton = new PluginObjectButton("fins_add_button", "Add Rocket Fins", FinsAddAction);
@@ -226,10 +247,8 @@ namespace RocketDesigner
 			AssemblyAddButton = new PluginObjectButton("assembly_add_button", "Set As Rocket Assembly", AssemblyAddAction);
 			EngineAddButton = new PluginObjectButton("engine_add_button", "Add Rocket Engine", EngineAddAction);
 			EngineFileAddButton = new PluginObjectButton("engine_file_add_button", "set Engine .eng File", EngineFileAddAction);
-
-
-			
-
+			LtankAddButton = new PluginObjectButton("liquid_tank_add_button", "Add Liquid Tank", LtankAddAction);
+			StankAddButton = new PluginObjectButton("solid_tank_add_button", "Add Solid Tank", StankAddAction);
 
 		}
 
@@ -285,12 +304,26 @@ namespace RocketDesigner
 					if (r != null)
 					{
 						calculAeroCoef(args, false);
-						aerodynamics.startSimu(e,r,matlabUtil);
+						aerodynamics.startSimu3DDL(e,r,matlabUtil);
 					}
 				}
 			}
 		}
-
+		public void launchSimu6ddlImpl(PluginActionArgs args)
+		{
+			foreach (Element e in args.MainSystem.Elements)
+			{
+				foreach (RelatedSubsystem s in e.RelatedSubsystems)
+				{
+					Rocket r = Rocket.getRocketFromElement(s);
+					if (r != null)
+					{
+						calculAeroCoef(args, false);
+						aerodynamics.startSimu6DDL(e, r, matlabUtil);
+					}
+				}
+			}
+		}
 
 
 		public void generateBatchImpl(PluginActionArgs args)
@@ -561,551 +594,7 @@ namespace RocketDesigner
 			//MessageBox.Show("excel closed");
 		}
 
-		private void EngineFileAddActionImpl(PluginObjectActionArgs args)
-		{
-			if (((Equipment)args.IdmObject).GetProperty("RocketEngine") != null)
-			{
-				OpenFileDialog openFileDialog1 = new OpenFileDialog
-				{
-					Title = "Select Engine (.eng) File",
-
-					CheckFileExists = true,
-					CheckPathExists = true,
-
-					DefaultExt = "txt.eng",
-					Filter = "eng files (*.eng)|*.eng",
-					FilterIndex = 2,
-					RestoreDirectory = true,
-					ReadOnlyChecked = true,
-					ShowReadOnly = true
-				};
-
-				if (openFileDialog1.ShowDialog() == DialogResult.OK)
-				{
-					if (((Equipment)args.IdmObject).GetDocument("1") != null)
-					{
-						((DocumentFile)((Equipment)args.IdmObject).GetDocument("1")).ChangeFileBy(openFileDialog1.FileName);
-					}
-					else
-					{
-						DocumentFile file = ((Equipment)args.IdmObject).AddDocumentFromFile(openFileDialog1.FileName);
-					}
-				}
-				
-			}
-		}
-
-		private void AssemblyAddActionImpl(PluginObjectActionArgs args)
-		{
-			if (!typeof(Assembly).IsInstanceOfType(args.IdmObject))
-				return;
-
-			Assembly ass = ((Assembly)args.IdmObject);
-
-			ass.Name = "Rocket";
-
-			foreach (CoordinateSystemDefinition coord in ass.CoordinateSystems)
-			{
-				if (coord.Name == "COG")
-				{
-					return;
-				}
-			}
-			CoordinateSystemDefinition cog = ass.AddCoordinateSystem();
-			cog.Name = "COG";
-			cog.Position.SetPropertyFormula("X", "[" + ass.GetFullPropertyName("GetCog(ITkCt)_x") + "]");
-			cog.Position.SetPropertyFormula("Y", "[" + ass.GetFullPropertyName("GetCog(ITkCt)_y") + "]");
-			cog.Position.SetPropertyFormula("Z", "[" + ass.GetFullPropertyName("GetCog(ITkCt)_z") + "]");
-
-			IdmCic.API.Model.IdmProperties.Property propMach = ass.AddProperty("mach", IdmCic.API.Model.IdmProperties.IdmPropertyType.DecimalWithoutUnit);
-			propMach.Name = "Mach";
-			propMach.Value = 0.0;
-
-			IdmCic.API.Model.IdmProperties.Property propFront = ass.AddProperty("frontFactor2D", IdmCic.API.Model.IdmProperties.IdmPropertyType.DecimalWithoutUnit);
-			propFront.Name = "Front factor 2D";
-			propFront.Value = 3;
-
-			IdmCic.API.Model.IdmProperties.Property propEnd = ass.AddProperty("endFactor2D", IdmCic.API.Model.IdmProperties.IdmPropertyType.DecimalWithoutUnit);
-			propEnd.Name = "Rear Factor 2D";
-			propEnd.Value = 1;
-
-			IdmCic.API.Model.IdmProperties.Property propHeight = ass.AddProperty("Height2D", IdmCic.API.Model.IdmProperties.IdmPropertyType.DecimalWithoutUnit);
-			propHeight.Name = "Height 2D";
-			propHeight.Value = 2000;
-
-
-			IdmCic.API.Model.IdmProperties.Property propType = ass.AddProperty("Rocket", IdmCic.API.Model.IdmProperties.IdmPropertyType.Bool);
-			propType.Name = "Rocket";
-			propType.Value = true;
-			propType.Hidden = true;
-
-
-		}
-		private string getNewID(RelatedSubsystem ss, string part)
-		{
-			int id = 0;
-			foreach (Equipment ekip in ss.Equipments)
-			{
-				if (ekip.Name.Contains(part))
-				{
-					int lid = -1;
-					int.TryParse(ekip.Name.Replace(part, ""), out lid);
-					if (id == lid)
-						id++;
-				}
-			}
-			return part + id;
-		}
-
-		private void EngineAddActionImpl(PluginObjectActionArgs args)
-		{
-			((Equipment)args.IdmObject).MciDataOrigin = MciDataOrigin.FromGeometry;
-			IdmCic.API.Model.IdmProperties.Property propType = ((Equipment)args.IdmObject).AddProperty("RocketEngine", IdmCic.API.Model.IdmProperties.IdmPropertyType.Bool);
-			propType.Name = "RocketEngine";
-			propType.Value = true;
-			propType.Hidden = true;
-
-			IdmCic.API.Model.IdmProperties.Property propTopRadius = ((Equipment)args.IdmObject).AddProperty("engCr", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propTopRadius.Name = "Chamber Radius";
-			propTopRadius.Value = 0.290;
-
-
-			IdmCic.API.Model.IdmProperties.Property propBotRadius = ((Equipment)args.IdmObject).AddProperty("engNr", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propBotRadius.Name = "Nozzle Radius";
-			propBotRadius.Value = 0.15;
-
-			IdmCic.API.Model.IdmProperties.Property propThroat = ((Equipment)args.IdmObject).AddProperty("engNt", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propThroat.Name = "Nozzle Throat";
-			propThroat.Value = 0.075;
-
-			IdmCic.API.Model.IdmProperties.Property propHeight = ((Equipment)args.IdmObject).AddProperty("engHn", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propHeight.Name = "Height Nozzle";
-			propHeight.Value = 0.2;
-
-			IdmCic.API.Model.IdmProperties.Property propHeight2 = ((Equipment)args.IdmObject).AddProperty("engHc", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propHeight2.Name = "Height Chamber";
-			propHeight2.Value = 0.3;
-
-
-			IdmCic.API.Model.IdmProperties.Property propTh = ((Equipment)args.IdmObject).AddProperty("engTh", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propTh.Name = "Thickness";
-			propTh.Value = 0.01;
-
-			IdmCic.API.Model.IdmProperties.Property propDensity = ((Equipment)args.IdmObject).AddProperty("engDe", IdmCic.API.Model.IdmProperties.IdmPropertyType.Density);
-			propDensity.Name = "Density";
-			propDensity.Value = 1780;
-
-			if (((Equipment)args.IdmObject).Shapes.Count > 0)
-				return;
-
-			IdmCic.API.Model.Subsystems.Shape shape = ((Equipment)args.IdmObject).AddShape(IdmCic.API.Model.Physics.Objects3D.Object3dType.HollowCone);
-			shape.Name = "RocketChamber";
-
-			((Equipment)args.IdmObject).Name = getNewID((RelatedSubsystem)((Equipment)args.IdmObject).Parent, "RocketEngine");
-
-			HollowCone o1 = (HollowCone)(shape.ShapeDefinition);
-			o1.SetPropertyFormula("D1", "mm_m(m_mm([" + propTopRadius.FullId.ToLower() + "_value]))");
-			o1.SetPropertyFormula("D2", "mm_m(m_mm([" + propThroat.FullId.ToLower() + "_value]))");
-			o1.SetPropertyFormula("D3", "mm_m(m_mm([" + propHeight2.FullId.ToLower() + "_value]))");
-			o1.SetPropertyFormula("D4", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))");
-
-			shape.MassDefinition.SetPropertyFormula("masspercubemeter", "[" + propDensity.FullId.ToLower() + "_value]");
-			shape.MassDefinition.MassType = MassType.Volume;
-
-			shape = ((Equipment)args.IdmObject).AddShape(IdmCic.API.Model.Physics.Objects3D.Object3dType.HollowCone);
-			shape.Name = "RocketNozzle";
-			HollowCone o2 = (HollowCone)(shape.ShapeDefinition);
-			o2.SetPropertyFormula("D1", "mm_m(m_mm([" + propThroat.FullId.ToLower() + "_value]))");
-			o2.SetPropertyFormula("D2", "mm_m(m_mm([" + propBotRadius.FullId.ToLower() + "_value]))");
-			o2.SetPropertyFormula("D3", "mm_m(m_mm([" + propHeight.FullId.ToLower() + "_value]))");
-			o2.SetPropertyFormula("D4", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))");
-			shape.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propHeight2.FullId.ToLower() + "_value]))");
-			shape.MassDefinition.SetPropertyFormula("masspercubemeter", "[" + propDensity.FullId.ToLower() + "_value]");
-			shape.MassDefinition.MassType = MassType.Volume;
-
-			shape = ((Equipment)args.IdmObject).AddShape(IdmCic.API.Model.Physics.Objects3D.Object3dType.FilledCylinder);
-			shape.Name = "TopChamber";
-			FilledCylinder o3 = (FilledCylinder)(shape.ShapeDefinition);
-			o3.SetPropertyFormula("D1", "mm_m(m_mm([" + propTopRadius.FullId.ToLower() + "_value]))");
-			o3.SetPropertyFormula("D3", "mm_m(5)");
-			shape.MassDefinition.SetPropertyFormula("masspercubemeter", "[" + propDensity.FullId.ToLower() + "_value]");
-			shape.MassDefinition.MassType = MassType.Volume;
-
-			CoordinateSystemDefinition sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
-			sys.Name = "bot_attach";
-			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propHeight.FullId.ToLower() + "_value] + [" + propHeight2.FullId.ToLower() + "_value]))");
-
-			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
-			sys.Name = "top_attach";
-			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm(0))");
-
-		}
-
-		private void TransitionAddActionImpl(PluginObjectActionArgs args)
-		{
-			((Equipment)args.IdmObject).MciDataOrigin = MciDataOrigin.FromGeometry;
-			IdmCic.API.Model.IdmProperties.Property propType = ((Equipment)args.IdmObject).AddProperty("RocketTransition", IdmCic.API.Model.IdmProperties.IdmPropertyType.Bool);
-			propType.Name = "RocketTransition";
-			propType.Value = true;
-			propType.Hidden = true;
-
-			IdmCic.API.Model.IdmProperties.Property propTopRadius = ((Equipment)args.IdmObject).AddProperty("transiTopR", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propTopRadius.Name = "Top Radius";
-			propTopRadius.Value = 0.3;
-
-			
-
-
-			IdmCic.API.Model.IdmProperties.Property propBotRadius = ((Equipment)args.IdmObject).AddProperty("transiBotR", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propBotRadius.Name = "Bot Radius";
-			propBotRadius.Value = 0.3;
-
-			IdmCic.API.Model.IdmProperties.Property propHeight = ((Equipment)args.IdmObject).AddProperty("transiH", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propHeight.Name = "Height";
-			propHeight.Value = 1;
-
-			IdmCic.API.Model.IdmProperties.Property propTh = ((Equipment)args.IdmObject).AddProperty("transiTh", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propTh.Name = "Thickness";
-			propTh.Value = 0.02;
-
-			IdmCic.API.Model.IdmProperties.Property propDensity = ((Equipment)args.IdmObject).AddProperty("transiDe", IdmCic.API.Model.IdmProperties.IdmPropertyType.Density);
-			propDensity.Name = "Density";
-			propDensity.Value = 1780;
-
-			if (((Equipment)args.IdmObject).Shapes.Count > 0)
-				return;
-
-			IdmCic.API.Model.Subsystems.Shape shape = ((Equipment)args.IdmObject).AddShape(IdmCic.API.Model.Physics.Objects3D.Object3dType.HollowCone);
-			shape.Name = "TransiShape";
-
-			((Equipment)args.IdmObject).Name = getNewID((RelatedSubsystem)((Equipment)args.IdmObject).Parent, "RocketTransition");
-
-			HollowCone o1 = (HollowCone)(shape.ShapeDefinition);
-			o1.SetPropertyFormula("D1", "mm_m(m_mm([" + propTopRadius.FullId.ToLower() + "_value]))");
-			o1.SetPropertyFormula("D2", "mm_m(m_mm([" + propBotRadius.FullId.ToLower() + "_value]))");
-			o1.SetPropertyFormula("D3", "mm_m(m_mm([" + propHeight.FullId.ToLower() + "_value]))");
-			o1.SetPropertyFormula("D4", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))");
-
-			shape.MassDefinition.SetPropertyFormula("masspercubemeter", "[" + propDensity.FullId.ToLower() + "_value]");
-			shape.MassDefinition.MassType = MassType.Volume;
-
-			CoordinateSystemDefinition sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
-			sys.Name = "bot_attach";
-			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propHeight.FullId.ToLower() + "_value]))");
-
-			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
-			sys.Name = "top_attach";
-			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm(0))");
-
-		}
-		private void BodyAddActionImpl(PluginObjectActionArgs args)
-		{
-			((Equipment)args.IdmObject).MciDataOrigin = MciDataOrigin.FromGeometry;
-			IdmCic.API.Model.IdmProperties.Property propType = ((Equipment)args.IdmObject).AddProperty("RocketBody", IdmCic.API.Model.IdmProperties.IdmPropertyType.Bool);
-			propType.Name = "RocketBody";
-			propType.Value = true;
-			propType.Hidden = true;
-
-			IdmCic.API.Model.IdmProperties.Property propRadius = ((Equipment)args.IdmObject).AddProperty("bodyR", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propRadius.Name = "Radius";
-			propRadius.Value = 0.3;
-
-			IdmCic.API.Model.IdmProperties.Property propH = ((Equipment)args.IdmObject).AddProperty("bodyH", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propH.Name = "Height";
-			propH.Value = 5;
-
-			IdmCic.API.Model.IdmProperties.Property propTh = ((Equipment)args.IdmObject).AddProperty("bodyTh", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propTh.Name = "Thickness";
-			propTh.Value = 0.02;
-
-			IdmCic.API.Model.IdmProperties.Property propLoc = ((Equipment)args.IdmObject).AddProperty("bodyFinPos", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propLoc.Name = "Fin Pos";
-			propLoc.Value = 0.00;
-
-			IdmCic.API.Model.IdmProperties.Property propEng = ((Equipment)args.IdmObject).AddProperty("bodyEngPos", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propEng.Name = "Engine Pos";
-			propEng.Value = 0.00;
-
-			IdmCic.API.Model.IdmProperties.Property propDensity = ((Equipment)args.IdmObject).AddProperty("bodyDe", IdmCic.API.Model.IdmProperties.IdmPropertyType.Density);
-			propDensity.Name = "Density";
-			propDensity.Value = 1780;
-
-			if (((Equipment)args.IdmObject).Shapes.Count > 0)
-				return;
-
-			IdmCic.API.Model.Subsystems.Shape shape = ((Equipment)args.IdmObject).AddShape(IdmCic.API.Model.Physics.Objects3D.Object3dType.HollowCylinder);
-			shape.Name = "BodyShape";
-			((Equipment)args.IdmObject).Name = getNewID((RelatedSubsystem)((Equipment)args.IdmObject).Parent, "RocketBody");
-
-			HollowCylinder o1 = (HollowCylinder)(shape.ShapeDefinition);
-			o1.SetPropertyFormula("D1", "mm_m(m_mm([" + propRadius.FullId.ToLower() + "_value]))");
-			o1.SetPropertyFormula("D3", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value]))");
-			o1.SetPropertyFormula("D4", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))");
-
-			shape.MassDefinition.SetPropertyFormula("masspercubemeter", "[" + propDensity.FullId.ToLower() + "_value]");
-			shape.MassDefinition.MassType = MassType.Volume;
-			
-			//4 fins
-			CoordinateSystemDefinition sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
-			sys.Name = "fin_attach_90_1";
-			sys.Position.SetPropertyFormula("X", "mm_m(m_mm([" + propRadius.FullId.ToLower() + "_value])-10)");
-			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value] - [" + propLoc.FullId.ToLower() + "_value]))");
-			sys.Position.SetPropertyFormula("Rotation1", "90");
-			sys.Position.SetPropertyFormula("Rotation2", "180");
-			sys.Position.SetPropertyFormula("Rotation3", "90");
-
-
-			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
-			sys.Name = "fin_attach_90_2";
-			sys.Position.SetPropertyFormula("X", "mm_m(m_mm(-[" + propRadius.FullId.ToLower() + "_value])+10)");
-			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value] - [" + propLoc.FullId.ToLower() + "_value]))");
-			sys.Position.SetPropertyFormula("Rotation1", "90");
-			sys.Position.SetPropertyFormula("Rotation2", "0");
-			sys.Position.SetPropertyFormula("Rotation3", "90");
-
-			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
-			sys.Name = "fin_attach_90_3";
-			sys.Position.SetPropertyFormula("Y", "mm_m(m_mm([" + propRadius.FullId.ToLower() + "_value])-10)");
-			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value] - [" + propLoc.FullId.ToLower() + "_value]))");
-			sys.Position.SetPropertyFormula("Rotation1", "90");
-			sys.Position.SetPropertyFormula("Rotation2", "-90");
-			sys.Position.SetPropertyFormula("Rotation3", "90");
-
-			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
-			sys.Name = "fin_attach_90_4";
-			sys.Position.SetPropertyFormula("Y", "mm_m(m_mm(-[" + propRadius.FullId.ToLower() + "_value])+10)");
-			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value] - [" + propLoc.FullId.ToLower() + "_value]))");
-			sys.Position.SetPropertyFormula("Rotation1", "90");
-			sys.Position.SetPropertyFormula("Rotation2", "90");
-			sys.Position.SetPropertyFormula("Rotation3", "90");
-
-			//3 fins
-			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
-			sys.Name = "fin_attach_120_1";
-			sys.Position.SetPropertyFormula("X", "mm_m( (m_mm([" + propRadius.FullId.ToLower() + "_value])-10)*0.5)");
-			sys.Position.SetPropertyFormula("Y", "mm_m( (m_mm(-[" + propRadius.FullId.ToLower() + "_value])+10)*COS(30*PI()/180))");
-			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value] - [" + propLoc.FullId.ToLower() + "_value]))");
-			sys.Position.SetPropertyFormula("Rotation1", "90");
-			sys.Position.SetPropertyFormula("Rotation2", "120");
-			sys.Position.SetPropertyFormula("Rotation3", "90");
-
-
-			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
-			sys.Name = "fin_attach_120_2";
-			sys.Position.SetPropertyFormula("X", "mm_m( (m_mm([" + propRadius.FullId.ToLower() + "_value])-10)*0.5)");
-			sys.Position.SetPropertyFormula("Y", "mm_m( (m_mm([" + propRadius.FullId.ToLower() + "_value])-10)*COS(30*PI()/180))");
-			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value] - [" + propLoc.FullId.ToLower() + "_value]))");
-			sys.Position.SetPropertyFormula("Rotation1", "90");
-			sys.Position.SetPropertyFormula("Rotation2", "-120");
-			sys.Position.SetPropertyFormula("Rotation3", "90");
-
-			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
-			sys.Name = "fin_attach_120_3";
-			sys.Position.SetPropertyFormula("X", "mm_m(m_mm(-[" + propRadius.FullId.ToLower() + "_value])+10)");
-			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value] - [" + propLoc.FullId.ToLower() + "_value]))");
-			sys.Position.SetPropertyFormula("Rotation1", "90");
-			sys.Position.SetPropertyFormula("Rotation2", "0");
-			sys.Position.SetPropertyFormula("Rotation3", "90");
-
-
-			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
-			sys.Name = "base_attach";
-			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value]))");
-
-			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
-			sys.Name = "top_attach";
-			//sys.Position.SetPropertyFormula("Rotation2", "-90");
-
-			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
-			sys.Name = "engine_attach";
-			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value] - [" + propEng.FullId.ToLower() + "_value]))");
-
-
-		}
-		private void NoseConeAddActionImpl(PluginObjectActionArgs args)
-		{
-			((Equipment)args.IdmObject).MciDataOrigin = MciDataOrigin.FromGeometry;
-			IdmCic.API.Model.IdmProperties.Property propType = ((Equipment)args.IdmObject).AddProperty("RocketNoseCone", IdmCic.API.Model.IdmProperties.IdmPropertyType.Bool);
-			propType.Name = "RocketNoseCone";
-			propType.Value = true;
-			propType.Hidden = true;
-
-			IdmCic.API.Model.IdmProperties.Property propRadius = ((Equipment)args.IdmObject).AddProperty("noseconeR", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propRadius.Name = "Radius";
-			propRadius.Value = 0.3;
-			IdmCic.API.Model.IdmProperties.Property propH = ((Equipment)args.IdmObject).AddProperty("noseconeH", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propH.Name = "Height";
-			propH.Value = 1;
-			IdmCic.API.Model.IdmProperties.Property propTh = ((Equipment)args.IdmObject).AddProperty("noseconeTh", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propTh.Name = "Thickness";
-			propTh.Value = 0.02;
-
-			IdmCic.API.Model.IdmProperties.Property propDensity = ((Equipment)args.IdmObject).AddProperty("noseconeDe", IdmCic.API.Model.IdmProperties.IdmPropertyType.Density);
-			propDensity.Name = "Density";
-			propDensity.Value = 1780;
-
-
-			((Equipment)args.IdmObject).Name = getNewID((RelatedSubsystem)((Equipment)args.IdmObject).Parent, "RocketNoseCone");
-
-			if (((Equipment)args.IdmObject).Shapes.Count > 0)
-				return;
-
-			IdmCic.API.Model.Subsystems.Shape shape = ((Equipment)args.IdmObject).AddShape(IdmCic.API.Model.Physics.Objects3D.Object3dType.Step);
-			shape.Name = "NoseConeShape";
-
-
-			shape.MassDefinition.SetPropertyFormula("masspercubemeter", "[" + propDensity.FullId.ToLower() + "_value]");
-			shape.MassDefinition.MassType = MassType.Volume;
-
-
-			var fileName = folderPath + "nosecone.STEP";
-			((IdmCic.API.Model.Physics.Objects3D.Miscs.Step)shape.ShapeDefinition).SetStepObjectFromFile(fileName);
-			shape.Position.SetPropertyFormula("Rotation2", "-90");
-			//shape.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value]))");
-
-
-			CoordinateSystemDefinition sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
-			sys.Name = "bot_attach";
-			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value]))");
-
-			sys = ((Equipment)args.IdmObject).AddCoordinateSystem();
-			sys.Name = "top_attach";
-			sys.Position.SetPropertyFormula("Z", "mm_m(m_mm(0))");
-
-			//updateNoseCone(((Equipment)args.IdmObject), null);
-
-		}
-		private void FinsAddActionImpl(PluginObjectActionArgs args)
-		{
-			((Equipment)args.IdmObject).MciDataOrigin = MciDataOrigin.FromGeometry;
-			IdmCic.API.Model.IdmProperties.Property propType = ((Equipment)args.IdmObject).AddProperty("RocketFin", IdmCic.API.Model.IdmProperties.IdmPropertyType.Bool);
-			propType.Name = "RocketFin";
-			propType.Value = true;
-			propType.Hidden = true;
-
-			IdmCic.API.Model.IdmProperties.Property propH = ((Equipment)args.IdmObject).AddProperty("finH", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propH.Name = "Height";
-			propH.Value = 250 * 0.001;
-			IdmCic.API.Model.IdmProperties.Property propH2 = ((Equipment)args.IdmObject).AddProperty("finH2", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propH2.Name = "Height (LE)";
-			propH2.Value = 40 * 0.001;
-			IdmCic.API.Model.IdmProperties.Property propH3 = ((Equipment)args.IdmObject).AddProperty("finH3", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propH3.Name = "Height (TE)";
-			propH3.Value = 40 * 0.001;
-			IdmCic.API.Model.IdmProperties.Property propTh = ((Equipment)args.IdmObject).AddProperty("finTh", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propTh.Name = "Thickness";
-			propTh.Value = 50 * 0.001;
-			IdmCic.API.Model.IdmProperties.Property propAng = ((Equipment)args.IdmObject).AddProperty("finA1", IdmCic.API.Model.IdmProperties.IdmPropertyType.Angle);
-			propAng.Name = "Angle LE";
-			propAng.Value = 25;
-			IdmCic.API.Model.IdmProperties.Property propAng2 = ((Equipment)args.IdmObject).AddProperty("finA2", IdmCic.API.Model.IdmProperties.IdmPropertyType.Angle);
-			propAng2.Name = "Angle TL";
-			propAng2.Value = 90;
-			IdmCic.API.Model.IdmProperties.Property propLen = ((Equipment)args.IdmObject).AddProperty("finL", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propLen.Name = "Length";
-			propLen.Value = 1200 * 0.001;
-			IdmCic.API.Model.IdmProperties.Property propDensity = ((Equipment)args.IdmObject).AddProperty("finDe", IdmCic.API.Model.IdmProperties.IdmPropertyType.Density);
-			propDensity.Name = "Density";
-			propDensity.Value = 1780;
-			int enfoncement = 10;
-
-			if (((Equipment)args.IdmObject).Shapes.Count > 0)
-				return;
-
-			IdmCic.API.Model.Subsystems.Shape shape = ((Equipment)args.IdmObject).AddShape(IdmCic.API.Model.Physics.Objects3D.Object3dType.Topology);
-			shape.Name = "RocketFinShape";
-			((Equipment)args.IdmObject).Name = getNewID((RelatedSubsystem)((Equipment)args.IdmObject).Parent, "RocketFin");
-			shape.MassDefinition.SetPropertyFormula("masspercubemeter", "[" + propDensity.FullId.ToLower() + "_value]");
-			shape.MassDefinition.MassType = MassType.Volume;
-
-			BooleanOperation bopp1 = ((IdmCic.API.Model.Physics.Objects3D.Miscs.Topology)shape.ShapeDefinition).AddBooleanOperation(IdmCic.API.Model.Physics.Objects3D.Object3dType.ExtrudedQuadrangle);
-			bopp1.OperationType = OperationType.Union;
-
-
-
-
-			ExtrudedQuadrangle o1 = (ExtrudedQuadrangle)(bopp1.Object3d);
-			o1.SetPropertyFormula("D1", "mm_m(m_mm([" + propLen.FullId.ToLower() + "_value]))");
-			o1.SetPropertyFormula("D2", "mm_m( (m_mm( [" + propH.FullId.ToLower() + "_value])+" + enfoncement + " )/sin(" + "[" + propAng.FullId.ToLower() + "_value]*3.14159265/180))");
-			o1.SetPropertyFormula("D3", "mm_m( (m_mm( [" + propH.FullId.ToLower() + "_value])+" + enfoncement + " )/sin(" + "[" + propAng2.FullId.ToLower() + "_value]*3.14159265/180))");
-			o1.SetPropertyFormula("D4", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))");
-			o1.SetPropertyFormula("angle1", "[" + propAng.FullId.ToLower() + "_value]");
-			o1.SetPropertyFormula("angle2", "[" + propAng2.FullId.ToLower() + "_value]");
-
-
-			bopp1.Position.SetPropertyFormula("z", "mm_m(m_mm(-[" + propTh.FullId.ToLower() + "_value]))/2");
-
-
-			BooleanOperation bopp2 = ((IdmCic.API.Model.Physics.Objects3D.Miscs.Topology)shape.ShapeDefinition).AddBooleanOperation(IdmCic.API.Model.Physics.Objects3D.Object3dType.ExtrudedTriangle);
-			bopp2.OperationType = OperationType.Union;
-			bopp2.Object3d.SetPropertyFormula("D1", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))");
-			bopp2.Object3d.SetPropertyFormula("D2", "mm_m(sqrt(pow(m_mm([" + propH2.FullId.ToLower() + "_value]), 2)+pow(m_mm([" + propTh.FullId.ToLower() + "_value])/2, 2) ))");
-			bopp2.Object3d.SetPropertyFormula("D3", "mm_m((m_mm([" + propH.FullId.ToLower() + "_value])+" + enfoncement + ")/sin(" + "[" + propAng.FullId.ToLower() + "_value]*3.14159265/180)+500)");
-
-
-
-			bopp2.Object3d.SetPropertyFormula("angle1", "ATAN([" + propH2.FullId.ToLower() + "_value]/([" + propTh.FullId.ToLower() + "_value]/2))*180/3.14159265");
-			bopp2.Position.SetPropertyFormula("X", "mm_m(-300*COS([" + propAng.FullId.ToLower() + "_value]*3.14159265/180))");
-			bopp2.Position.SetPropertyFormula("Y", "mm_m(-300*SIN([" + propAng.FullId.ToLower() + "_value]*3.14159265/180))");
-			bopp2.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))/2");
-
-			bopp2.Position.SetPropertyFormula("Rotation1", "90");
-			bopp2.Position.SetPropertyFormula("Rotation2", "90 + [" + propAng.FullId.ToLower() + "_value]");
-			bopp2.Position.SetPropertyFormula("Rotation3", "-90");
-
-
-			BooleanOperation bopp5 = ((IdmCic.API.Model.Physics.Objects3D.Miscs.Topology)shape.ShapeDefinition).AddBooleanOperation(IdmCic.API.Model.Physics.Objects3D.Object3dType.Box);
-			bopp5.OperationType = OperationType.Difference;
-			bopp5.Object3d.SetPropertyFormula("D1", "mm_m(m_mm([" + propLen.FullId.ToLower() + "_value]))*2");
-			bopp5.Object3d.SetPropertyFormula("D2", "mm_m(1000)");
-			bopp5.Object3d.SetPropertyFormula("D3", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))*2");
-
-			bopp5.Position.SetPropertyFormula("X", "mm_m(m_mm([" + propLen.FullId.ToLower() + "_value]))");
-			bopp5.Position.SetPropertyFormula("Z", "mm_m(m_mm(-[" + propTh.FullId.ToLower() + "_value]))");
-			bopp5.Position.SetPropertyFormula("Rotation3", "[" + propAng2.FullId.ToLower() + "_value] - 90");
-
-
-			BooleanOperation bopp6 = ((IdmCic.API.Model.Physics.Objects3D.Miscs.Topology)shape.ShapeDefinition).AddBooleanOperation(IdmCic.API.Model.Physics.Objects3D.Object3dType.ExtrudedTriangle);
-			bopp6.OperationType = OperationType.Union;
-			bopp6.Object3d.SetPropertyFormula("D1", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))");
-			bopp6.Object3d.SetPropertyFormula("D2", "mm_m(sqrt(pow(m_mm([" + propH3.FullId.ToLower() + "_value]), 2)+pow(m_mm([" + propTh.FullId.ToLower() + "_value])/2, 2) ))");
-			bopp6.Object3d.SetPropertyFormula("D3", "mm_m( (m_mm([" + propH.FullId.ToLower() + "_value])+" + enfoncement + ") /sin(" + "[" + propAng2.FullId.ToLower() + "_value]*3.14159265/180) +500)");
-
-
-
-			bopp6.Object3d.SetPropertyFormula("angle1", "ATAN([" + propH3.FullId.ToLower() + "_value]/([" + propTh.FullId.ToLower() + "_value]/2))*180/3.14159265");
-			bopp6.Position.SetPropertyFormula("X", "mm_m(m_mm([" + propLen.FullId.ToLower() + "_value])) + mm_m(-300*COS([" + propAng2.FullId.ToLower() + "_value]*3.14159265/180))");
-			bopp6.Position.SetPropertyFormula("Y", "mm_m(-300*SIN([" + propAng2.FullId.ToLower() + "_value]*3.14159265/180))");
-			bopp6.Position.SetPropertyFormula("Z", "mm_m(m_mm(-[" + propTh.FullId.ToLower() + "_value]))/2");
-
-			bopp6.Position.SetPropertyFormula("Rotation1", "-90");
-			bopp6.Position.SetPropertyFormula("Rotation2", "90 - [" + propAng2.FullId.ToLower() + "_value]");
-			bopp6.Position.SetPropertyFormula("Rotation3", "-90");
-
-			BooleanOperation bopp3 = ((IdmCic.API.Model.Physics.Objects3D.Miscs.Topology)shape.ShapeDefinition).AddBooleanOperation(IdmCic.API.Model.Physics.Objects3D.Object3dType.Box);
-			bopp3.OperationType = OperationType.Difference;
-			bopp3.Object3d.SetPropertyFormula("D1", "mm_m(m_mm([" + propLen.FullId.ToLower() + "_value]))*2");
-			bopp3.Object3d.SetPropertyFormula("D2", "mm_m(1000)");
-			bopp3.Object3d.SetPropertyFormula("D3", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))*2");
-			bopp3.Position.SetPropertyFormula("X", "mm_m(m_mm((3/2)*[" + propLen.FullId.ToLower() + "_value]))");
-			bopp3.Position.SetPropertyFormula("Z", "mm_m(m_mm(-[" + propTh.FullId.ToLower() + "_value]))");
-			bopp3.Position.SetPropertyFormula("Rotation3", "180");
-
-			BooleanOperation bopp4 = ((IdmCic.API.Model.Physics.Objects3D.Miscs.Topology)shape.ShapeDefinition).AddBooleanOperation(IdmCic.API.Model.Physics.Objects3D.Object3dType.Box);
-			bopp4.OperationType = OperationType.Difference;
-			bopp4.Object3d.SetPropertyFormula("D1", "mm_m(m_mm([" + propLen.FullId.ToLower() + "_value]))*2");
-			bopp4.Object3d.SetPropertyFormula("D2", "mm_m(1000)");
-			bopp4.Object3d.SetPropertyFormula("D3", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))*2");
-
-			bopp4.Position.SetPropertyFormula("Y", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value])+" + enfoncement + ")");
-			bopp4.Position.SetPropertyFormula("Z", "mm_m(m_mm(-[" + propTh.FullId.ToLower() + "_value]))");
-			bopp4.Position.SetPropertyFormula("X", "mm_m(m_mm(-[" + propH2.FullId.ToLower() + "_value]*3))");
-
-			shape.Position.SetPropertyFormula("X", "mm_m(m_mm(-[" + propLen.FullId.ToLower() + "_value]-[" + propH3.FullId.ToLower() + "_value]))");
-
-
-
-		}
+		
 
 
 		public void updateNoseCone(Equipment noseCone, ModelEventInfo info)

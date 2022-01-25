@@ -10,15 +10,19 @@ namespace RocketDesigner
 {
 	public class Engine : RocketElement
 	{
-		public Engine(string engFile, double radius)
+		public Engine(string engFile, double radius, double rMix, double ISP)
 		{
 			this.As = radius*radius*Math.PI;
 			path = engFile;
+			this.rMix = rMix;
+			this.ISP = ISP;
 		}
 		string path;
-		double As;
+		public double As;
 		string motorName,manufacturer;
 		double diameter, len, propW, totW;
+		public double rMix;
+		public double ISP;
 		double[] delays;
 		public double[,] values;
 

@@ -32,40 +32,183 @@ namespace RocketDesigner
 			CNa(assemb);
 		}
 
-		public void startSimu(Element e, Rocket r, Matlab matlab)
-		{
-			IdmCic.API.Model.Physics.Point dry = e.GetCog(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.None);
-			IdmCic.API.Model.Physics.Point wet = e.GetCog(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.IncludeTankContent);
 
+		public void writeExcel(Element e, Rocket r,string path)
+        {
+			Microsoft.Office.Interop.Excel.Application app = new Microsoft.Office.Interop.Excel.Application();
+			Workbook wb = app.Workbooks.Open(Main.folderPath+ path);
+			app.Visible = false;
+
+			Worksheet sheet = (Worksheet)wb.Worksheets["Propulsion"];
+			sheet.Activate();
+
+			//PROPULSION
+			double[,] thrust = (double[,])getThrust(r);
+			for (int i = 0; i < thrust.GetLength(0); i++)
+			{
+				sheet.Range[("B" + (i+3))].FormulaR1C1Local = thrust[i, 0];
+				sheet.Range[("C" + (i+3))].FormulaR1C1Local = thrust[i, 1];
+			}
+			sheet.Range["H3"].FormulaR1C1Local = r.getEngine().ISP;
+			sheet.Range["J3"].FormulaR1C1Local = r.getEngine().rMix;
+			sheet.Range["K3"].FormulaR1C1Local = r.getEngine().getAs();
+			/////////////
+
+			//STRUCTURE
+			sheet = (Worksheet)wb.Worksheets["Structure"];
+			sheet.Activate();
 			double dryMass = e.GetMass(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.None);
-			double wetMass = e.GetMass(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.IncludeTankContent);
-			Matrix Idry = e.GetInertiaMatrix(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.None);
-			Matrix Iwet = e.GetInertiaMatrix(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.IncludeTankContent);
+			IdmCic.API.Model.Physics.Point dry = e.GetCog(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.None);
+			sheet.Range["C9"].FormulaR1C1Local = dryMass;
+			sheet.Range["D9"].FormulaR1C1Local = dry.Z*1000; //in simu Z = X
+			sheet.Range["E9"].FormulaR1C1Local = dry.Y*1000;
+			sheet.Range["F9"].FormulaR1C1Local = dry.X*1000;
+			sheet.Range["G9"].FormulaR1C1Local = r.getLen()*1000;
+			sheet.Range["H9"].FormulaR1C1Local = r.getRadius() * 2*1000;
 
-			double cogC = (wet.Z - dry.Z) / (wetMass - dryMass);
-			double cogO = dry.Z - dryMass * cogC ;
+			//TANKS
+			foreach (RocketElement t in r.tanks)
+			{
+				if (typeof(SolidTank).IsInstanceOfType(t))
+				{
+					SolidTank st = (SolidTank)t;
+					if (((SolidTank)t).type == 0)
+					{
+						sheet.Range["C13"].FormulaR1C1Local = 1;
+						sheet.Range["D13"].FormulaR1C1Local = st.height*1000; //in simu Z = X
+						sheet.Range["E13"].FormulaR1C1Local = st.maxSolidMass;
+						sheet.Range["F13"].FormulaR1C1Local = st.solidMass;
+						sheet.Range["G13"].FormulaR1C1Local = st.cogZ*1000;
+					}
+					else if(st.type == 1)
+					{
+						sheet.Range["C14"].FormulaR1C1Local = 1;
+						sheet.Range["D14"].FormulaR1C1Local = st.height*1000; //in simu Z = X
+						sheet.Range["E14"].FormulaR1C1Local = st.maxSolidMass;
+						sheet.Range["F14"].FormulaR1C1Local = st.solidMass;
+						sheet.Range["G14"].FormulaR1C1Local = st.cogZ*1000;
+					}
+				}
+				if (typeof(LiquidTank).IsInstanceOfType(t))
+				{
+					LiquidTank lt = (LiquidTank)t;
+					if (((LiquidTank)t).type == 0)
+					{
+						sheet.Range["C13"].FormulaR1C1Local = 2;
+						sheet.Range["D13"].FormulaR1C1Local = lt.height*1000; //in simu Z = X
+						sheet.Range["E13"].FormulaR1C1Local = lt.maxLiquidMass;
+						sheet.Range["F13"].FormulaR1C1Local = lt.liquidMass;
+						sheet.Range["G13"].FormulaR1C1Local = lt.cogZ*1000;
+					}
+					else if(lt.type == 1)
+					{
+						sheet.Range["C14"].FormulaR1C1Local = 2;
+						sheet.Range["D14"].FormulaR1C1Local = lt.height*1000; //in simu Z = X
+						sheet.Range["E14"].FormulaR1C1Local = lt.maxLiquidMass;
+						sheet.Range["F14"].FormulaR1C1Local = lt.liquidMass;
+						sheet.Range["G14"].FormulaR1C1Local = lt.cogZ*1000;
+					}
+				}
+			}
+			//////
+			//////////
+			wb.Save();
+			wb.Close();
+			app.Quit();
+		}
 
-			double IC = (Iwet.Xx - Idry.Xx) / (wetMass - dryMass);
-			double IO = Idry.Xx - dryMass * IC;
+		public static bool checkVersion(string version, string requiredVersion)
+        {
+			if (int.Parse(version.Split('.')[0]) >= int.Parse(requiredVersion.Split('.')[0]))
+            {
+				if (int.Parse(version.Split('.')[1]) >= int.Parse(requiredVersion.Split('.')[1]))
+				{
+					if (int.Parse(version.Split('.')[2]) >= int.Parse(requiredVersion.Split('.')[2]))
+					{
+						return true;
+					}
+				}
+			}
+			return false;
+		}
 
+		public void startSimu3DDL(Element e, Rocket r, Matlab matlab)
+		{
+
+			if (!checkVersion(r.version, "0.5.0"))
+			{
+				MessageBox.Show("Rocket was made with on a outdated version of RocketDesigner, you have to rebuild it");
+				return;
+			}
+
+			writeExcel(e, r, "\\matlab\\3ddl\\Données_Excel.xlsx");
 			object cp = getCP(600);
 			object ca = getCA(600);
 			object cn = getCN(600);
-			object thrust = getThrust(r);
 
-
-			double Fi = 50000;
-
-			double sref = 2;
-
-			double ergolMass = wetMass - dryMass;
 
 
 			if (matlab.loadMatlab())
 			{
 				object result = null;
 				System.Array input = new double[10];
-				matlab.getMatlabInstance().Feval("simu3ddl2", 4, out result, (double)IC, (double)IO, (double)wetMass, thrust, ca, cp, cn, (double)sref, (double)r.getLen(), (double)ergolMass, cogC, cogO, r.getEngine().getAs(), 0);
+				matlab.getMatlabInstance().Execute(@"cd " + Main.folderPath + "\\matlab\\3ddl");
+				matlab.getMatlabInstance().PutWorkspaceData("CP", "base", cp);
+				matlab.getMatlabInstance().PutWorkspaceData("CA", "base", ca);
+				matlab.getMatlabInstance().PutWorkspaceData("CNa", "base", cn);
+				matlab.getMatlabInstance().Execute("save('aero')");
+				matlab.getMatlabInstance().Execute("simu3ddl2");
+
+			}
+
+			/*
+			IdmCic.API.Model.Physics.Point dry = e.GetCog(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.None);
+
+			double dryMass = e.GetMass(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.None);
+
+			
+
+			object cp = getCP(600);
+			object ca = getCA(600);
+			object cn = getCN(600);
+			object thrust = getThrust(r);
+
+			double sref = 2;
+
+			//tank :  x,y,z,mass,maxMass,h,type (0 = liquid; 1 = solid)
+			var tank = new object[r.tanks.Count,7];
+			int indext = 0;
+			foreach(RocketElement t in r.tanks){
+                if (typeof(SolidTank).IsInstanceOfType(t))
+                {
+					SolidTank tt = (SolidTank) t;
+					tank[indext, 0] = tt.cogX;
+					tank[indext, 1] = tt.cogX;
+					tank[indext, 2] = tt.cogX;
+					tank[indext, 3] = tt.solidMass;
+					tank[indext, 4] = tt.maxSolidMass;
+					tank[indext, 5] = tt.height;
+					tank[indext, 6] = 1;
+				}
+				else if (typeof(SolidTank).IsInstanceOfType(t))
+				{
+					LiquidTank tt = (LiquidTank)t;
+					tank[indext, 0] = tt.cogX;
+					tank[indext, 1] = tt.cogX;
+					tank[indext, 2] = tt.cogX;
+					tank[indext, 3] = tt.liquidMass;
+					tank[indext, 4] = tt.maxLiquidMass;
+					tank[indext, 5] = tt.height;
+					tank[indext, 6] = 0;
+				}
+			}
+
+
+			if (matlab.loadMatlab())
+			{
+				object result = null;
+				System.Array input = new double[10];
+				matlab.getMatlabInstance().Feval("simu3ddl2", 4, out result, tank, (double)dryMass, thrust, ca, cp, cn, (double)sref, (double)r.getLen(), (double)0, 0, 0, r.getEngine().getAs(), 0);
 				//matlab.Feval("simu3ddl2", 2, out result, 1,2);
 				object[] res = result as object[];
 				matlab.getMatlabInstance().Execute("save('simData')");
@@ -77,10 +220,40 @@ namespace RocketDesigner
 					"Mach max : " + status.Split(';')[4] + "\n"
 				);
 			}
-
+			*/
 
 		}
-		
+
+		public void startSimu6DDL(Element e, Rocket r, Matlab matlab)
+		{
+			if (!checkVersion(r.version, "0.5.0"))
+			{
+				MessageBox.Show("Rocket was made with on a outdated version of RocketDesigner, you have to rebuild it");
+				return;
+			}
+
+			writeExcel(e, r, "\\matlab\\6ddl\\Données_Excel.xlsx");
+			object cp = getCP(600);
+			object ca = getCA(600);
+			object cn = getCN(600);
+
+
+
+			if (matlab.loadMatlab())
+			{
+				object result = null;
+				System.Array input = new double[10];
+				matlab.getMatlabInstance().Execute(@"cd " + Main.folderPath + "\\matlab\\6ddl");
+				matlab.getMatlabInstance().PutWorkspaceData("CP", "base", cp);
+				matlab.getMatlabInstance().PutWorkspaceData("CA", "base", ca);
+				matlab.getMatlabInstance().PutWorkspaceData("CNa", "base", cn);
+				matlab.getMatlabInstance().Execute("save('aero')");
+				matlab.getMatlabInstance().Execute("Matlab_6DDL");
+
+			}
+
+		}
+
 		static object getThrust(Rocket r) {
 			Engine eng = (Engine)r.getEngine();
 			eng.unpack();

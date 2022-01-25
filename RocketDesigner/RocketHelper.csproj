@@ -58,6 +58,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Aerodynamics.cs" />
+    <Compile Include="ComponentCreator.cs" />
     <Compile Include="Datagen.cs" />
     <Compile Include="Engine.cs" />
     <Compile Include="BatchGnerator.cs">
@@ -66,8 +67,11 @@
     <Compile Include="BatchGnerator.Designer.cs">
       <DependentUpon>BatchGnerator.cs</DependentUpon>
     </Compile>
+    <Compile Include="SolidTank.cs" />
+    <Compile Include="LiquidTank.cs" />
     <Compile Include="Matlab.cs" />
     <Compile Include="Parameters.cs" />
+    <Compile Include="SolidWorksException.cs" />
     <Compile Include="SolidWorksUtil.cs" />
     <Compile Include="Transition.cs" />
     <Compile Include="Body.cs" />

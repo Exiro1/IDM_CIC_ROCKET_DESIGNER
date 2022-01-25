@@ -15,12 +15,17 @@ namespace RocketDesigner
 		private Engine engine;
 		private Nosecone nose;
 		public Dictionary<string, RocketElement> elems;
+		public List<RocketElement> tanks;
+
 		Assembly assembly;
 		double totalLen;
 		int finCount;
+		double radius;
+		public string version;
 		public Rocket()
 		{
 			elems = new Dictionary<string, RocketElement>();
+			tanks = new List<RocketElement>();
 		}
 
 		public void addElement(RocketElement element)
@@ -47,7 +52,10 @@ namespace RocketDesigner
 		{
 			return nose;
 		}
-
+		public double getRadius()
+		{
+			return radius;
+		}
 		public double toInch(double m)
 		{
 			return Math.Round(m * 39.3701, 3);
@@ -128,7 +136,7 @@ namespace RocketDesigner
 
 		public string generateXMLFile(string name)
 		{
-			string filename = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\" + name + ".CDX1");
+			string filename = Path.Combine(Main.folderPath + name + ".CDX1");
 			XmlTextWriter xmlTextWriter2 = new XmlTextWriter(filename, null);
 
 
@@ -204,18 +212,22 @@ namespace RocketDesigner
 
 			IdmCic.API.Model.Subsystems.Assembly rocket = null;
 
-
+			string vers = "";
 			foreach (IdmCic.API.Model.Subsystems.Assembly e in ss.Assemblies.ToList())
 			{
 				if (e.GetProperty("Rocket") != null)
 				{
 					rocket = e;
+					if(e.GetProperty("Version") != null)
+						vers = (string)e.GetProperty("Version").Value;
 				}
 			}
 			if (rocket is null)
 				return null;
 
 			Rocket r = new Rocket();
+			r.version = vers;
+			r.radius = 0;
 			r.assembly = rocket;
 			foreach (EquipmentInstance ei in rocket.EquipmentInstances.ToList())
 			{
@@ -224,6 +236,8 @@ namespace RocketDesigner
 				{
 					Body b = new Body((double)e.GetProperty("bodyH").Value, (double)e.GetProperty("bodyFinPos").Value, (double)e.GetProperty("bodyR").Value, (double)e.GetProperty("bodyDe").Value, (double)e.GetProperty("bodyTh").Value);
 					b.Name = e.Name;
+					if(b.radius > r.radius)
+						r.radius = b.radius;
 					r.addElement(b);
 				}
 				else if (e.GetProperty("RocketFin") != null)
@@ -240,6 +254,8 @@ namespace RocketDesigner
 				{
 					Nosecone n = new Nosecone(Nosecone.NoseConeShape.Tangent, (double)e.GetProperty("noseconeH").Value, (double)e.GetProperty("noseconeR").Value, 0, (double)e.GetProperty("noseconeDe").Value, (double)e.GetProperty("noseconeTh").Value);
 					n.Name = e.Name;
+					if (n.radius > r.radius)
+						r.radius = n.radius;
 					r.addElement(n);
 					r.setNose(n);
 				}
@@ -253,11 +269,45 @@ namespace RocketDesigner
 				{
 					if (e.GetDocument("1") != null)
 					{
-						Engine eng = new Engine(e.GetDocument("1").GetFullFilePath(), (double)e.GetProperty("engNr").Value);
+						Engine eng = new Engine(e.GetDocument("1").GetFullFilePath(), (double)e.GetProperty("engNr").Value, (double)e.GetProperty("engRMix").Value, (double)e.GetProperty("engISP").Value);
 						eng.Name = e.Name;
 						r.addElement(eng);
 						r.engine = eng;
 					}
+				}
+				else if (e.GetProperty("RocketSTank") != null)
+				{
+					double x=0, y=0, z=0;
+					foreach(Shape s in e.Shapes)
+                    {
+						if (s.Name == "fuel")
+                        {
+							x = s.Position.X;
+							y = s.Position.Y;
+							z = s.Position.Z;
+						}
+                    }
+					SolidTank b = new SolidTank((double)e.GetProperty("StankRad").Value, (double)e.GetProperty("StankH").Value, (double)e.GetProperty("StankTh").Value, (double)e.GetProperty("StankDe").Value, (double)e.GetProperty("StankMass").Value, (double)e.GetProperty("StankMaxMass").Value, ei.GetAbsolutePosition().X+x, ei.GetAbsolutePosition().Y+y, ei.GetAbsolutePosition().Z+z, (int)e.GetProperty("StankType").Value);
+					b.Name = e.Name;
+					r.addElement(b);
+					r.tanks.Add(b);
+				}
+				else if (e.GetProperty("RocketLTank") != null)
+				{
+					double x = 0, y = 0, z = 0;
+					foreach (Shape s in e.Shapes)
+					{
+						if (s.Name == "fuel")
+						{
+							x = s.Position.X;
+							y = s.Position.Y;
+							z = s.Position.Z;
+						}
+					}
+					LiquidTank b = new LiquidTank((double)e.GetProperty("LtankRad").Value, (double)e.GetProperty("LtankH").Value, (double)e.GetProperty("LtankTh").Value, (double)e.GetProperty("LtankDe").Value, (double)e.GetProperty("LtankMass").Value, (double)e.GetProperty("LtankMaxMass").Value, ei.GetAbsolutePosition().X+x, ei.GetAbsolutePosition().Y+y, ei.GetAbsolutePosition().Z+z, (int)e.GetProperty("LtankType").Value);
+					b.Name = e.Name;
+					r.addElement(b);
+					r.tanks.Add(b);
 				}
 			}
 			foreach (EquipmentInstance ei in rocket.EquipmentInstances.ToList())
