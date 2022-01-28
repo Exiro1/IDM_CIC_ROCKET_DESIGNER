@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using IdmCic.API;
 
 namespace RocketDesigner
 {
@@ -14,19 +15,23 @@ namespace RocketDesigner
 		
 		Random ran;
 		Matlab matlab;
-		public Datagen(Matlab matlab)
+		Aerodynamics aero;
+		public Datagen(Matlab matlab, Aerodynamics aero)
 		{
 			ran = new Random();
+			this.aero = aero;
 			this.matlab = matlab;
 		}
 
-		public void generatePatch(Rocket start, ParametersEnum.Parameters[] param, double[,] limits, int count)
+		public void generatePatch(Rocket start, ParametersEnum.Parameters[] param, double[,] limits, int count, IdmCic.API.Model.Mainsystem.Element e)
 		{
-			double[,] globalData = new double[count,3+param.Length];
+			double[,] globalData = new double[count,4+param.Length];
 			for(int i = 0; i < count; i++)
 			{
 				double[] par = randomizeRocket(start, param, limits);
 				double[] datas = getData(start, 1.1);
+				double alt = getSimAlt(start, e);
+				xlApptemp.Workbooks[xlApptemp.Workbooks.Count].Close(false);
 				int j = 0;
 				foreach (double d in par)
 				{
@@ -38,13 +43,19 @@ namespace RocketDesigner
 					globalData[i, j] = d;
 					j++;
 				}
+				globalData[i, j] = alt;
 			}
 			matlab.displayGraphs(param, globalData);
 		}
 
+        private double getSimAlt(Rocket start, IdmCic.API.Model.Mainsystem.Element e)
+        {
+			double[] result = aero.startSimu3DDL(e, start, matlab, false, false);
+			return result[1];
+		}
 
 
-
+		Microsoft.Office.Interop.Excel.Application xlApptemp;
 
 
 		public double[] getData(Rocket r, double mach)
@@ -70,13 +81,13 @@ namespace RocketDesigner
 				System.IO.File.Delete(fileName);
 
 			System.IO.File.Move(fileName.Replace("txt", "CSV"), fileName);
-			Microsoft.Office.Interop.Excel.Application xlApp = (Microsoft.Office.Interop.Excel.Application)System.Runtime.InteropServices.Marshal.GetActiveObject("Excel.Application");
+			xlApptemp = (Microsoft.Office.Interop.Excel.Application)System.Runtime.InteropServices.Marshal.GetActiveObject("Excel.Application");
 			Microsoft.Office.Interop.Excel.Workbook xlWorkBook;
 			Microsoft.Office.Interop.Excel.Worksheet xlWorkSheet;
 			Microsoft.Office.Interop.Excel.Range range;
 
-			xlApp.Workbooks.OpenText(fileName, DataType: Microsoft.Office.Interop.Excel.XlTextParsingType.xlDelimited, Semicolon: true, Comma: false);
-			Worksheet worksheet = (Worksheet)xlApp.Workbooks[xlApp.Workbooks.Count].Worksheets["ras2"];
+			xlApptemp.Workbooks.OpenText(fileName, DataType: Microsoft.Office.Interop.Excel.XlTextParsingType.xlDelimited, Semicolon: true, Comma: false);
+			Worksheet worksheet = (Worksheet)xlApptemp.Workbooks[xlApptemp.Workbooks.Count].Worksheets["ras2"];
 
 			Microsoft.Office.Interop.Excel.Range data = (Microsoft.Office.Interop.Excel.Range)worksheet.Cells[2+ ((int)(1+mach*100)), 7];
 			double CaPon = Double.Parse((string)data.FormulaR1C1Local);
@@ -85,7 +96,6 @@ namespace RocketDesigner
 			data = (Microsoft.Office.Interop.Excel.Range)worksheet.Cells[2 + ((int)(1 + mach * 100)), 13];
 			double CP = Double.Parse((string)data.FormulaR1C1Local);
 
-			xlApp.Workbooks[xlApp.Workbooks.Count].Close(false);
 
 			return new double[] { CaPon, CnAlpha, toMeter(CP) };
 		}

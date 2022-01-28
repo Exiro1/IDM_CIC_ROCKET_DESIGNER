@@ -192,8 +192,8 @@ namespace RocketDesigner
 
 				fileName = Main.folderPath + "nosecone2.STEP";
 				Part.SaveAs3(fileName, 0, 2);
+				Part.SaveAs3(fileName.Replace("STEP","SLDPRT"), 0, 2);
 				swApp.CloseDoc(Part.GetTitle());
-
 		}
 
 

@@ -26,7 +26,12 @@ namespace RocketDesigner
 	public class Main : AbstractPlugin
 	{
 
-		public static string folderPath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\test\\");
+		/*
+		 * path to change in RAS aero : L ; ar (2*) ;
+		 */
+
+
+		public static string folderPath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\RocketDesigner\\");
 		public static string version = "0.5.0";
 
 
@@ -304,7 +309,7 @@ namespace RocketDesigner
 					if (r != null)
 					{
 						calculAeroCoef(args, false);
-						aerodynamics.startSimu3DDL(e,r,matlabUtil);
+						aerodynamics.startSimu3DDL(e,r,matlabUtil, true, true);
 					}
 				}
 			}
@@ -340,7 +345,7 @@ namespace RocketDesigner
 						if (f.cancel)
 							return;
 
-						Datagen g = new Datagen(matlabUtil);
+						Datagen g = new Datagen(matlabUtil, aerodynamics);
 
 						ParametersEnum.Parameters[] param = { (ParametersEnum.Parameters)f.p1, (ParametersEnum.Parameters)f.p2 };
 
@@ -349,7 +354,7 @@ namespace RocketDesigner
 						lim[0, 0] = f.min1;
 						lim[1, 1] = f.max2;
 						lim[1, 0] = f.min2;
-						g.generatePatch(r, param, lim, f.nbr);
+						g.generatePatch(r, param, lim, f.nbr, e);
 
 					}
 				}
@@ -594,7 +599,7 @@ namespace RocketDesigner
 			//MessageBox.Show("excel closed");
 		}
 
-		
+
 
 
 		public void updateNoseCone(Equipment noseCone, ModelEventInfo info)
@@ -606,30 +611,69 @@ namespace RocketDesigner
 			IdmCic.API.Model.IdmProperties.Property propHeight = noseCone.GetProperty("noseconeH");
 			IdmCic.API.Model.IdmProperties.Property propTh = noseCone.GetProperty("noseconeTh");
 
+
+
+
+
+
 			if (propRadius is null || propHeight is null || noseCone.Shapes.First() is null)
 				return;
 
-			if (swUtil.isAvailable())
+			if (swUtil.loadSW())
 			{
 				swUtil.updateSWNoseFile((double)propRadius.Value * 1000, (double)propHeight.Value * 1000, (double)propTh.Value * 1000);
 				var fileName = folderPath + "nosecone2.STEP";
-				((IdmCic.API.Model.Physics.Objects3D.Miscs.Step)noseCone.Shapes.First().ShapeDefinition).SetStepObjectFromFile(fileName);
 				((IdmCic.API.Model.Physics.Objects3D.Miscs.Step)noseCone.Shapes.First().ShapeDefinition).D2 = 1;
 				((IdmCic.API.Model.Physics.Objects3D.Miscs.Step)noseCone.Shapes.First().ShapeDefinition).D3 = 1;
 				((IdmCic.API.Model.Physics.Objects3D.Miscs.Step)noseCone.Shapes.First().ShapeDefinition).D1 = 1;
+				((IdmCic.API.Model.Physics.Objects3D.Miscs.Step)noseCone.Shapes.First().ShapeDefinition).SetStepObjectFromFile(fileName);
+
+				using (StreamWriter sw = File.CreateText(folderPath + "noseconeDim.txt"))
+				{
+					sw.WriteLine(((double)propRadius.Value * 1000) + ";" + ((double)propHeight.Value * 1000));
+				}
+				if (noseCone.GetDocument("1") != null)
+				{
+					noseCone.GetDocument("1").ChangeFileBy(folderPath + "noseconeDim.txt");
+				}
+				else
+				{
+					DocumentFile file = noseCone.AddDocumentFromFile(folderPath + "noseconeDim.txt");
+				}
 			}
 			else
 			{
+				double r = 0.3;
+				double h = 1;
+				if (noseCone.GetDocument("1") != null) { 
+					string dim = File.ReadAllText(noseCone.GetDocument("1").GetFullFilePath());
+					r = safeParse(dim.Split(';')[0]) / 1000;
+					h = safeParse(dim.Split(';')[1]) / 1000;
+				}
 				if (info.FullPropertyPath.Contains("noseconeR"))
 				{
-					((IdmCic.API.Model.Physics.Objects3D.Miscs.Step)noseCone.Shapes.First().ShapeDefinition).D2 *= ((double)info.NewValue / (double)0.3);
-					((IdmCic.API.Model.Physics.Objects3D.Miscs.Step)noseCone.Shapes.First().ShapeDefinition).D3 *= ((double)info.NewValue / (double)0.3);
+					((IdmCic.API.Model.Physics.Objects3D.Miscs.Step)noseCone.Shapes.First().ShapeDefinition).D2 = ((double)info.NewValue / (double)r);
+					((IdmCic.API.Model.Physics.Objects3D.Miscs.Step)noseCone.Shapes.First().ShapeDefinition).D3 = ((double)info.NewValue / (double)r);
 				}
 				else if (info.FullPropertyPath.Contains("noseconeH"))
 				{
-					((IdmCic.API.Model.Physics.Objects3D.Miscs.Step)noseCone.Shapes.First().ShapeDefinition).D1 *= ((double)info.NewValue / (double)1);
+					((IdmCic.API.Model.Physics.Objects3D.Miscs.Step)noseCone.Shapes.First().ShapeDefinition).D1 = ((double)info.NewValue / (double)h);
+				}
+
+			}
+		}
+
+		public double safeParse(string d)
+		{
+			double res;
+			if (!Double.TryParse(d, out res))
+			{
+				if (!Double.TryParse(d.Replace('.', ','), out res))
+				{
+					return 0;
 				}
 			}
+			return res;
 		}
 
 	}

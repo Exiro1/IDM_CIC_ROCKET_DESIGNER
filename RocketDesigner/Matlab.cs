@@ -86,6 +86,8 @@ namespace RocketDesigner
 			matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, 4)); title(\"Cnalpha = fct(" + param[0].ToString() + "," + param[1].ToString() + ")\");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"CNalpha\")");
 			matlab.Execute("figure");
 			matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, 5)); title(\"CP = fct(" + param[0].ToString() + "," + param[1].ToString() + ") (distance from nose)  \");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"CP\")");
+			matlab.Execute("figure");
+			matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, 6)); title(\"Altitude max = fct(" + param[0].ToString() + "," + param[1].ToString() + ") (3DoF simu)  \");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"meters\")");
 			matlab.Execute("save('data')");
 		}
 

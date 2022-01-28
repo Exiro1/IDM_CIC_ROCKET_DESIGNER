@@ -33,7 +33,7 @@ namespace RocketDesigner
 		}
 
 
-		public void writeExcel(Element e, Rocket r,string path)
+		public void writeExcel(Element e, Rocket r,string path, bool runsimu, bool showGraph)
         {
 			Microsoft.Office.Interop.Excel.Application app = new Microsoft.Office.Interop.Excel.Application();
 			Workbook wb = app.Workbooks.Open(Main.folderPath+ path);
@@ -53,6 +53,14 @@ namespace RocketDesigner
 			sheet.Range["J3"].FormulaR1C1Local = r.getEngine().rMix;
 			sheet.Range["K3"].FormulaR1C1Local = r.getEngine().getAs();
 			/////////////
+		
+			//INIT
+			sheet = (Worksheet)wb.Worksheets["Conditions initiales"];
+			sheet.Activate();
+			sheet.Range["G3"].FormulaR1C1Local = runsimu ? 1 : 0;
+			sheet.Range["G6"].FormulaR1C1Local = showGraph ? 1 : 0;
+			/////////////
+
 
 			//STRUCTURE
 			sheet = (Worksheet)wb.Worksheets["Structure"];
@@ -132,16 +140,16 @@ namespace RocketDesigner
 			return false;
 		}
 
-		public void startSimu3DDL(Element e, Rocket r, Matlab matlab)
+		public double[] startSimu3DDL(Element e, Rocket r, Matlab matlab,bool runsimu, bool showGraph)
 		{
 
 			if (!checkVersion(r.version, "0.5.0"))
 			{
 				MessageBox.Show("Rocket was made with on a outdated version of RocketDesigner, you have to rebuild it");
-				return;
+				return null;
 			}
 
-			writeExcel(e, r, "\\matlab\\3ddl\\Données_Excel.xlsx");
+			writeExcel(e, r, "\\matlab\\3ddl\\Données_Excel.xlsx",runsimu,showGraph);
 			object cp = getCP(600);
 			object ca = getCA(600);
 			object cn = getCN(600);
@@ -158,7 +166,21 @@ namespace RocketDesigner
 				matlab.getMatlabInstance().PutWorkspaceData("CNa", "base", cn);
 				matlab.getMatlabInstance().Execute("save('aero')");
 				matlab.getMatlabInstance().Execute("simu3ddl2");
-
+				string status = matlab.getMatlabInstance().Execute("status");
+				double err = status.Split(';')[0].Remove(0, 17).Contains("OK") ? 0 : 1;
+				double alt = safeParse(status.Split(';')[1]);
+				double ms = safeParse(status.Split(';')[2]);
+				double qinf = safeParse(status.Split(';')[3]);
+				double mach = safeParse(status.Split(';')[4].Replace("\"\n\n", ""));
+				if (showGraph) { 
+				MessageBox.Show("Status du vol : " + status.Split(';')[0].Remove(0, 17) + "\n" +
+					"Altitude max : " + status.Split(';')[1] + " m\n" +
+					"Marge statique min : " + status.Split(';')[2] + " m\n" +
+					"Qinf max : " + status.Split(';')[3] + " Pa\n" +
+					"Mach max : " + status.Split(';')[4].Replace("\"\n\n", "") + "\n"
+				);
+				}
+				return new double[]{err,alt,ms,qinf,mach };
 			}
 
 			/*
@@ -221,7 +243,7 @@ namespace RocketDesigner
 				);
 			}
 			*/
-
+			return null;
 		}
 
 		public void startSimu6DDL(Element e, Rocket r, Matlab matlab)
@@ -232,7 +254,7 @@ namespace RocketDesigner
 				return;
 			}
 
-			writeExcel(e, r, "\\matlab\\6ddl\\Données_Excel.xlsx");
+			writeExcel(e, r, "\\matlab\\6ddl\\Données_Excel.xlsx", true,true);
 			object cp = getCP(600);
 			object ca = getCA(600);
 			object cn = getCN(600);
@@ -251,8 +273,21 @@ namespace RocketDesigner
 				matlab.getMatlabInstance().Execute("Matlab_6DDL");
 
 			}
-
 		}
+
+		public double safeParse(string d)
+		{
+			double res;
+			if (!Double.TryParse(d, out res))
+			{
+				if (!Double.TryParse(d.Replace('.', ','), out res))
+				{
+					return 0;
+				}
+			}
+			return res;
+		}
+
 
 		static object getThrust(Rocket r) {
 			Engine eng = (Engine)r.getEngine();
@@ -263,7 +298,8 @@ namespace RocketDesigner
 		static object getCP(int size)
 		{
 			Microsoft.Office.Interop.Excel.Application app = (Microsoft.Office.Interop.Excel.Application)System.Runtime.InteropServices.Marshal.GetActiveObject("Excel.Application");
-			Microsoft.Office.Interop.Excel._Worksheet sheet = (_Worksheet)app.ActiveSheet;
+			Microsoft.Office.Interop.Excel.Workbook wb = app.ActiveWorkbook;
+			Worksheet sheet = (Worksheet)wb.Worksheets["ras2"];
 			var r = sheet.Range["M2"].Resize[size, 1];
 			var array = (object[,]) r.Value;
 			double[] d = new double[size];
@@ -277,7 +313,8 @@ namespace RocketDesigner
 		static object getCN(int size)
 		{
 			Microsoft.Office.Interop.Excel.Application app = (Microsoft.Office.Interop.Excel.Application)System.Runtime.InteropServices.Marshal.GetActiveObject("Excel.Application");
-			Microsoft.Office.Interop.Excel._Worksheet sheet = (_Worksheet)app.ActiveSheet;
+			Microsoft.Office.Interop.Excel.Workbook wb = app.ActiveWorkbook;
+			Worksheet sheet = (Worksheet)wb.Worksheets["ras2"];
 			var r = sheet.Range["L2"].Resize[size, 1];
 			var array = (object[,]) r.Value;
 			double[] d = new double[size];
@@ -290,7 +327,8 @@ namespace RocketDesigner
 		static object getCA(int size)
 		{
 			Microsoft.Office.Interop.Excel.Application app = (Microsoft.Office.Interop.Excel.Application)System.Runtime.InteropServices.Marshal.GetActiveObject("Excel.Application");
-			Microsoft.Office.Interop.Excel._Worksheet sheet = (_Worksheet)app.ActiveSheet;
+			Microsoft.Office.Interop.Excel.Workbook wb = app.ActiveWorkbook;
+			Worksheet sheet = (Worksheet)wb.Worksheets["ras2"];
 			var r = sheet.Range["G2"].Resize[600, 1];
 			var array = (object[,]) r.Value;
 			double[] d = new double[size];
