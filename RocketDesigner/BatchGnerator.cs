@@ -26,12 +26,19 @@ namespace RocketDesigner
 
         public ParametersEnum.Parameters p1;
         public ParametersEnum.Parameters p2;
-        public double min1, min2, max1, max2;
+        public double min1, min2, max1, max2, machnbr;
         public bool cancel = true;
+        public bool ca, cp, cna, alt, mach, ms, qinf;
+
 
         private void BatchGenerator_FormClosed(object sender, FormClosedEventArgs e)
         {
             
+        }
+
+        private void groupBox1_Enter(object sender, EventArgs e)
+        {
+
         }
 
         private void BatchGenerator_Load(object sender, EventArgs e)
@@ -81,9 +88,23 @@ namespace RocketDesigner
                 max2 *= Math.PI / 180;
             }
 
+            ca = checkBoxCa.Checked;
+            cp = checkBoxCP.Checked;
+            cna = checkBoxCNa.Checked;
+            alt = checkBoxAlt.Checked;
+            qinf = checkBoxQinf.Checked;
+            mach = checkBoxMach.Checked;
+            ms = checkBoxMs.Checked;
+            machnbr = (double)numericMach.Value;
+
             nbr = (int)batchNumber_Numeric.Value;
             cancel = false;
             Close();
+        }
+
+        internal bool[] getShow()
+        {
+            return new bool[] {ca,cna,cp,alt,ms,qinf,mach};
         }
     }
 }

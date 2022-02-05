@@ -180,7 +180,7 @@ namespace RocketDesigner
 					"Mach max : " + status.Split(';')[4].Replace("\"\n\n", "") + "\n"
 				);
 				}
-				return new double[]{err,alt,ms,qinf,mach };
+				return new double[] {alt, ms, qinf, mach,err };
 			}
 
 			/*

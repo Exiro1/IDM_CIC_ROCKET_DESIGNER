@@ -23,35 +23,49 @@ namespace RocketDesigner
 			this.matlab = matlab;
 		}
 
-		public void generatePatch(Rocket start, ParametersEnum.Parameters[] param, double[,] limits, int count, IdmCic.API.Model.Mainsystem.Element e)
+		public void generatePatch(Rocket start, ParametersEnum.Parameters[] param, double[,] limits, int count, IdmCic.API.Model.Mainsystem.Element e, double mach, bool[] show)
 		{
-			double[,] globalData = new double[count,4+param.Length];
+
+
+			double[,] globalData = new double[count, show.Count(c => true) + param.Length];
 			for(int i = 0; i < count; i++)
 			{
 				double[] par = randomizeRocket(start, param, limits);
-				double[] datas = getData(start, 1.1);
-				double alt = getSimAlt(start, e);
+				double[] datas = getData(start, mach);
+				double[] sim = getSimData(start, e);
+
 				xlApptemp.Workbooks[xlApptemp.Workbooks.Count].Close(false);
 				int j = 0;
+				int k = 0;
 				foreach (double d in par)
-				{
-					globalData[i,j] = d;
-					j++;
-				}
-				foreach (double d in datas)
 				{
 					globalData[i, j] = d;
 					j++;
 				}
-				globalData[i, j] = alt;
+				foreach (double d in datas)
+				{
+					if (show[k])
+					{
+						globalData[i, j] = d;
+						j++;
+					}
+					k++;
+				}
+				foreach (double d in sim)
+				{
+					if (k < show.Length && show[k]) {
+						globalData[i, j] = d;
+						j++;
+					}
+					k++;
+				}
 			}
-			matlab.displayGraphs(param, globalData);
+			matlab.displayGraphs(param, globalData, show);
 		}
 
-        private double getSimAlt(Rocket start, IdmCic.API.Model.Mainsystem.Element e)
+        private double[] getSimData(Rocket start, IdmCic.API.Model.Mainsystem.Element e)
         {
-			double[] result = aero.startSimu3DDL(e, start, matlab, false, false);
-			return result[1];
+			return aero.startSimu3DDL(e, start, matlab, false, false);
 		}
 
 

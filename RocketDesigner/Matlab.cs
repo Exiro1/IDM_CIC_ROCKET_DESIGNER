@@ -73,21 +73,59 @@ namespace RocketDesigner
 			return installed;
 		}
 
-		public void displayGraphs(ParametersEnum.Parameters[] param, double[,] globalData)
-        {
+		public void displayGraphs(ParametersEnum.Parameters[] param, double[,] globalData, bool[] show)
+		{
 			if (!loadMatlab())
 				return;
 
 			object result = null;
 			matlab.PutWorkspaceData("data", "base", globalData);
-			matlab.Execute("figure");
-			matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, 3)); title(\"Ca = fct(" + param[0].ToString() + "," + param[1].ToString() + ")\");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"Ca\")");
-			matlab.Execute("figure");
-			matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, 4)); title(\"Cnalpha = fct(" + param[0].ToString() + "," + param[1].ToString() + ")\");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"CNalpha\")");
-			matlab.Execute("figure");
-			matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, 5)); title(\"CP = fct(" + param[0].ToString() + "," + param[1].ToString() + ") (distance from nose)  \");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"CP\")");
-			matlab.Execute("figure");
-			matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, 6)); title(\"Altitude max = fct(" + param[0].ToString() + "," + param[1].ToString() + ") (3DoF simu)  \");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"meters\")");
+			int k = 3;
+			if (show[0])
+			{
+				matlab.Execute("figure");
+				matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, 3)); title(\"Ca = fct(" + param[0].ToString() + "," + param[1].ToString() + ")\");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"Ca\")");
+				k++;
+			}
+			if (show[1])
+			{
+				matlab.Execute("figure");
+				matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, " + k + ")); title(\"Cnalpha = fct(" + param[0].ToString() + "," + param[1].ToString() + ")\");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"CNalpha\")");
+				k++;
+			}
+			if (show[2])
+			{
+				matlab.Execute("figure");
+				matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, " + k + ")); title(\"CP = fct(" + param[0].ToString() + "," + param[1].ToString() + ") (distance from nose)  \");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"CP\")");
+				k++;
+			}
+
+			if (show[3])
+			{
+				matlab.Execute("figure");
+				matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, " + k + ")); title(\"Altitude max = fct(" + param[0].ToString() + "," + param[1].ToString() + ") (3DoF simu)  \");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"meters\")");
+				k++;
+			}
+			if (show[4])
+			{
+				matlab.Execute("figure");
+				matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, " + k + ")); title(\"Static Margin min = fct(" + param[0].ToString() + "," + param[1].ToString() + ") (3DoF simu)  \");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"meters\")");
+				k++;
+			}
+			if (show[5])
+			{
+				matlab.Execute("figure");
+				matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, " + k + ")); title(\"Qinf max = fct(" + param[0].ToString() + "," + param[1].ToString() + ") (3DoF simu)  \");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"Pa\")");
+				k++;
+			}
+			if (show[6])
+			{
+				matlab.Execute("figure");
+				matlab.Execute("scatter3(data(:, 1), data(:, 2), data(:, " + k + ")); title(\"Mach max = fct(" + param[0].ToString() + "," + param[1].ToString() + ") (3DoF simu)  \");xlabel(\"" + param[0].ToString() + "\"); ylabel(\"" + param[1].ToString() + "\"); zlabel(\"Mach number\")");
+				k++;
+			}
+
+
 			matlab.Execute("save('data')");
 		}
 
