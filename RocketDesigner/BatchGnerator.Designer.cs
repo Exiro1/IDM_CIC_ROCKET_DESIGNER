@@ -47,15 +47,17 @@
             this.label2 = new System.Windows.Forms.Label();
             this.checkBoxCa = new System.Windows.Forms.CheckBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.checkBoxCP = new System.Windows.Forms.CheckBox();
-            this.checkBoxCNa = new System.Windows.Forms.CheckBox();
-            this.numericMach = new System.Windows.Forms.NumericUpDown();
             this.label1 = new System.Windows.Forms.Label();
+            this.numericMach = new System.Windows.Forms.NumericUpDown();
+            this.checkBoxCNa = new System.Windows.Forms.CheckBox();
+            this.checkBoxCP = new System.Windows.Forms.CheckBox();
             this.groupBoxSim = new System.Windows.Forms.GroupBox();
+            this.checkBoxMach = new System.Windows.Forms.CheckBox();
             this.checkBoxQinf = new System.Windows.Forms.CheckBox();
             this.checkBoxMs = new System.Windows.Forms.CheckBox();
             this.checkBoxAlt = new System.Windows.Forms.CheckBox();
-            this.checkBoxMach = new System.Windows.Forms.CheckBox();
+            this.comboBoxDistrib = new System.Windows.Forms.ComboBox();
+            this.label3 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.batchNumber_Numeric)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.min1_Numeric)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.max1_Numeric)).BeginInit();
@@ -68,7 +70,7 @@
             // 
             // batchNumber_Numeric
             // 
-            this.batchNumber_Numeric.Location = new System.Drawing.Point(168, 115);
+            this.batchNumber_Numeric.Location = new System.Drawing.Point(165, 142);
             this.batchNumber_Numeric.Name = "batchNumber_Numeric";
             this.batchNumber_Numeric.Size = new System.Drawing.Size(120, 20);
             this.batchNumber_Numeric.TabIndex = 0;
@@ -76,7 +78,7 @@
             // param1_comboBox
             // 
             this.param1_comboBox.FormattingEnabled = true;
-            this.param1_comboBox.Location = new System.Drawing.Point(108, 21);
+            this.param1_comboBox.Location = new System.Drawing.Point(105, 48);
             this.param1_comboBox.Name = "param1_comboBox";
             this.param1_comboBox.Size = new System.Drawing.Size(121, 21);
             this.param1_comboBox.TabIndex = 1;
@@ -84,7 +86,7 @@
             // param1_Label
             // 
             this.param1_Label.AutoSize = true;
-            this.param1_Label.Location = new System.Drawing.Point(15, 24);
+            this.param1_Label.Location = new System.Drawing.Point(12, 51);
             this.param1_Label.Name = "param1_Label";
             this.param1_Label.Size = new System.Drawing.Size(76, 13);
             this.param1_Label.TabIndex = 2;
@@ -93,7 +95,7 @@
             // param2_Label
             // 
             this.param2_Label.AutoSize = true;
-            this.param2_Label.Location = new System.Drawing.Point(15, 69);
+            this.param2_Label.Location = new System.Drawing.Point(12, 96);
             this.param2_Label.Name = "param2_Label";
             this.param2_Label.Size = new System.Drawing.Size(94, 13);
             this.param2_Label.TabIndex = 3;
@@ -102,7 +104,7 @@
             // param2_comboBox
             // 
             this.param2_comboBox.FormattingEnabled = true;
-            this.param2_comboBox.Location = new System.Drawing.Point(108, 66);
+            this.param2_comboBox.Location = new System.Drawing.Point(105, 93);
             this.param2_comboBox.Name = "param2_comboBox";
             this.param2_comboBox.Size = new System.Drawing.Size(121, 21);
             this.param2_comboBox.TabIndex = 4;
@@ -110,7 +112,7 @@
             // batchNumber_Label
             // 
             this.batchNumber_Label.AutoSize = true;
-            this.batchNumber_Label.Location = new System.Drawing.Point(15, 117);
+            this.batchNumber_Label.Location = new System.Drawing.Point(12, 144);
             this.batchNumber_Label.Name = "batchNumber_Label";
             this.batchNumber_Label.Size = new System.Drawing.Size(147, 13);
             this.batchNumber_Label.TabIndex = 5;
@@ -120,7 +122,7 @@
             // min1_Numeric
             // 
             this.min1_Numeric.DecimalPlaces = 3;
-            this.min1_Numeric.Location = new System.Drawing.Point(305, 21);
+            this.min1_Numeric.Location = new System.Drawing.Point(302, 48);
             this.min1_Numeric.Name = "min1_Numeric";
             this.min1_Numeric.Size = new System.Drawing.Size(120, 20);
             this.min1_Numeric.TabIndex = 6;
@@ -128,7 +130,7 @@
             // max1_Numeric
             // 
             this.max1_Numeric.DecimalPlaces = 3;
-            this.max1_Numeric.Location = new System.Drawing.Point(516, 21);
+            this.max1_Numeric.Location = new System.Drawing.Point(513, 48);
             this.max1_Numeric.Name = "max1_Numeric";
             this.max1_Numeric.Size = new System.Drawing.Size(120, 20);
             this.max1_Numeric.TabIndex = 7;
@@ -136,7 +138,7 @@
             // min2_Numeric
             // 
             this.min2_Numeric.DecimalPlaces = 3;
-            this.min2_Numeric.Location = new System.Drawing.Point(305, 67);
+            this.min2_Numeric.Location = new System.Drawing.Point(302, 94);
             this.min2_Numeric.Name = "min2_Numeric";
             this.min2_Numeric.Size = new System.Drawing.Size(120, 20);
             this.min2_Numeric.TabIndex = 8;
@@ -144,7 +146,7 @@
             // max2_Numeric
             // 
             this.max2_Numeric.DecimalPlaces = 3;
-            this.max2_Numeric.Location = new System.Drawing.Point(516, 67);
+            this.max2_Numeric.Location = new System.Drawing.Point(513, 94);
             this.max2_Numeric.Name = "max2_Numeric";
             this.max2_Numeric.Size = new System.Drawing.Size(120, 20);
             this.max2_Numeric.TabIndex = 9;
@@ -152,7 +154,7 @@
             // min1_label
             // 
             this.min1_label.AutoSize = true;
-            this.min1_label.Location = new System.Drawing.Point(252, 24);
+            this.min1_label.Location = new System.Drawing.Point(249, 51);
             this.min1_label.Name = "min1_label";
             this.min1_label.Size = new System.Drawing.Size(47, 13);
             this.min1_label.TabIndex = 10;
@@ -161,7 +163,7 @@
             // min2_label
             // 
             this.min2_label.AutoSize = true;
-            this.min2_label.Location = new System.Drawing.Point(252, 69);
+            this.min2_label.Location = new System.Drawing.Point(249, 96);
             this.min2_label.Name = "min2_label";
             this.min2_label.Size = new System.Drawing.Size(47, 13);
             this.min2_label.TabIndex = 11;
@@ -170,7 +172,7 @@
             // max2_label
             // 
             this.max2_label.AutoSize = true;
-            this.max2_label.Location = new System.Drawing.Point(463, 69);
+            this.max2_label.Location = new System.Drawing.Point(460, 96);
             this.max2_label.Name = "max2_label";
             this.max2_label.Size = new System.Drawing.Size(50, 13);
             this.max2_label.TabIndex = 12;
@@ -179,7 +181,7 @@
             // max1_label
             // 
             this.max1_label.AutoSize = true;
-            this.max1_label.Location = new System.Drawing.Point(463, 23);
+            this.max1_label.Location = new System.Drawing.Point(460, 50);
             this.max1_label.Name = "max1_label";
             this.max1_label.Size = new System.Drawing.Size(50, 13);
             this.max1_label.TabIndex = 13;
@@ -187,7 +189,7 @@
             // 
             // generate_button
             // 
-            this.generate_button.Location = new System.Drawing.Point(195, 306);
+            this.generate_button.Location = new System.Drawing.Point(192, 333);
             this.generate_button.Name = "generate_button";
             this.generate_button.Size = new System.Drawing.Size(331, 23);
             this.generate_button.TabIndex = 14;
@@ -198,7 +200,7 @@
             // info_label
             // 
             this.info_label.AutoSize = true;
-            this.info_label.Location = new System.Drawing.Point(649, 23);
+            this.info_label.Location = new System.Drawing.Point(646, 50);
             this.info_label.Name = "info_label";
             this.info_label.Size = new System.Drawing.Size(88, 13);
             this.info_label.TabIndex = 15;
@@ -207,7 +209,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(649, 69);
+            this.label2.Location = new System.Drawing.Point(646, 96);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(88, 13);
             this.label2.TabIndex = 17;
@@ -230,7 +232,7 @@
             this.groupBox1.Controls.Add(this.checkBoxCNa);
             this.groupBox1.Controls.Add(this.checkBoxCP);
             this.groupBox1.Controls.Add(this.checkBoxCa);
-            this.groupBox1.Location = new System.Drawing.Point(18, 167);
+            this.groupBox1.Location = new System.Drawing.Point(15, 194);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(303, 106);
             this.groupBox1.TabIndex = 19;
@@ -238,15 +240,22 @@
             this.groupBox1.Text = "Results Graphs Coef";
             this.groupBox1.Enter += new System.EventHandler(this.groupBox1_Enter);
             // 
-            // checkBoxCP
+            // label1
             // 
-            this.checkBoxCP.AutoSize = true;
-            this.checkBoxCP.Location = new System.Drawing.Point(11, 53);
-            this.checkBoxCP.Name = "checkBoxCP";
-            this.checkBoxCP.Size = new System.Drawing.Size(40, 17);
-            this.checkBoxCP.TabIndex = 19;
-            this.checkBoxCP.Text = "CP";
-            this.checkBoxCP.UseVisualStyleBackColor = true;
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(124, 53);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(34, 13);
+            this.label1.TabIndex = 22;
+            this.label1.Text = "Mach";
+            // 
+            // numericMach
+            // 
+            this.numericMach.DecimalPlaces = 3;
+            this.numericMach.Location = new System.Drawing.Point(164, 50);
+            this.numericMach.Name = "numericMach";
+            this.numericMach.Size = new System.Drawing.Size(120, 20);
+            this.numericMach.TabIndex = 21;
             // 
             // checkBoxCNa
             // 
@@ -258,22 +267,15 @@
             this.checkBoxCNa.Text = "CNa";
             this.checkBoxCNa.UseVisualStyleBackColor = true;
             // 
-            // numericMach
+            // checkBoxCP
             // 
-            this.numericMach.DecimalPlaces = 3;
-            this.numericMach.Location = new System.Drawing.Point(164, 50);
-            this.numericMach.Name = "numericMach";
-            this.numericMach.Size = new System.Drawing.Size(120, 20);
-            this.numericMach.TabIndex = 21;
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(124, 53);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(34, 13);
-            this.label1.TabIndex = 22;
-            this.label1.Text = "Mach";
+            this.checkBoxCP.AutoSize = true;
+            this.checkBoxCP.Location = new System.Drawing.Point(11, 53);
+            this.checkBoxCP.Name = "checkBoxCP";
+            this.checkBoxCP.Size = new System.Drawing.Size(40, 17);
+            this.checkBoxCP.TabIndex = 19;
+            this.checkBoxCP.Text = "CP";
+            this.checkBoxCP.UseVisualStyleBackColor = true;
             // 
             // groupBoxSim
             // 
@@ -281,12 +283,22 @@
             this.groupBoxSim.Controls.Add(this.checkBoxQinf);
             this.groupBoxSim.Controls.Add(this.checkBoxMs);
             this.groupBoxSim.Controls.Add(this.checkBoxAlt);
-            this.groupBoxSim.Location = new System.Drawing.Point(466, 167);
+            this.groupBoxSim.Location = new System.Drawing.Point(463, 194);
             this.groupBoxSim.Name = "groupBoxSim";
             this.groupBoxSim.Size = new System.Drawing.Size(226, 106);
             this.groupBoxSim.TabIndex = 23;
             this.groupBoxSim.TabStop = false;
             this.groupBoxSim.Text = "Results Graphs Simulation";
+            // 
+            // checkBoxMach
+            // 
+            this.checkBoxMach.AutoSize = true;
+            this.checkBoxMach.Location = new System.Drawing.Point(139, 30);
+            this.checkBoxMach.Name = "checkBoxMach";
+            this.checkBoxMach.Size = new System.Drawing.Size(75, 17);
+            this.checkBoxMach.TabIndex = 21;
+            this.checkBoxMach.Text = "Mach max";
+            this.checkBoxMach.UseVisualStyleBackColor = true;
             // 
             // checkBoxQinf
             // 
@@ -318,21 +330,34 @@
             this.checkBoxAlt.Text = "Altitude Max";
             this.checkBoxAlt.UseVisualStyleBackColor = true;
             // 
-            // checkBoxMach
+            // comboBoxDistrib
             // 
-            this.checkBoxMach.AutoSize = true;
-            this.checkBoxMach.Location = new System.Drawing.Point(139, 30);
-            this.checkBoxMach.Name = "checkBoxMach";
-            this.checkBoxMach.Size = new System.Drawing.Size(75, 17);
-            this.checkBoxMach.TabIndex = 21;
-            this.checkBoxMach.Text = "Mach max";
-            this.checkBoxMach.UseVisualStyleBackColor = true;
+            this.comboBoxDistrib.FormattingEnabled = true;
+            this.comboBoxDistrib.Items.AddRange(new object[] {
+            "Normal Distribution",
+            "Uniform Distribution"});
+            this.comboBoxDistrib.Location = new System.Drawing.Point(126, 12);
+            this.comboBoxDistrib.Name = "comboBoxDistrib";
+            this.comboBoxDistrib.Size = new System.Drawing.Size(121, 21);
+            this.comboBoxDistrib.TabIndex = 24;
+            this.comboBoxDistrib.SelectedIndexChanged += new System.EventHandler(this.comboBoxDistrib_SelectedIndexChanged);
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(12, 15);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(108, 13);
+            this.label3.TabIndex = 25;
+            this.label3.Text = "Probability distribution";
             // 
             // BatchGenerator
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(745, 341);
+            this.ClientSize = new System.Drawing.Size(743, 371);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.comboBoxDistrib);
             this.Controls.Add(this.groupBoxSim);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.label2);
@@ -401,5 +426,7 @@
         private System.Windows.Forms.CheckBox checkBoxMs;
         private System.Windows.Forms.CheckBox checkBoxAlt;
         private System.Windows.Forms.CheckBox checkBoxMach;
+        private System.Windows.Forms.ComboBox comboBoxDistrib;
+        private System.Windows.Forms.Label label3;
     }
 }

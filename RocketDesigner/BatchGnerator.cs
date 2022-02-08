@@ -29,7 +29,25 @@ namespace RocketDesigner
         public double min1, min2, max1, max2, machnbr;
         public bool cancel = true;
         public bool ca, cp, cna, alt, mach, ms, qinf;
+        public int distrib = 1; //0 = normal; 1 = uniform;
 
+        private void comboBoxDistrib_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if((comboBoxDistrib.SelectedIndex == 0))
+            {
+                min1_label.Text = "deviation";
+                min2_label.Text = "deviation";
+                max1_label.Text = "mean";
+                max2_label.Text = "mean";
+            }
+            else if ((comboBoxDistrib.SelectedIndex == 1))
+            {
+                min1_label.Text = "minimum";
+                min2_label.Text = "minimum";
+                max1_label.Text = "maximum";
+                max2_label.Text = "maximum";
+            }
+        }
 
         private void BatchGenerator_FormClosed(object sender, FormClosedEventArgs e)
         {
@@ -60,6 +78,8 @@ namespace RocketDesigner
             param2_comboBox.Items.Add(ParametersEnum.Parameters.SPAN);
             param2_comboBox.Items.Add(ParametersEnum.Parameters.THICKNESS);
             param2_comboBox.Items.Add(ParametersEnum.Parameters.SWEEP);
+
+            comboBoxDistrib.SelectedIndex = 1;
 
         }
 
@@ -96,7 +116,7 @@ namespace RocketDesigner
             mach = checkBoxMach.Checked;
             ms = checkBoxMs.Checked;
             machnbr = (double)numericMach.Value;
-
+            distrib = comboBoxDistrib.SelectedIndex;
             nbr = (int)batchNumber_Numeric.Value;
             cancel = false;
             Close();

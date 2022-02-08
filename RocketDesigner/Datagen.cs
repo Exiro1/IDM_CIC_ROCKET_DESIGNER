@@ -23,14 +23,14 @@ namespace RocketDesigner
 			this.matlab = matlab;
 		}
 
-		public void generatePatch(Rocket start, ParametersEnum.Parameters[] param, double[,] limits, int count, IdmCic.API.Model.Mainsystem.Element e, double mach, bool[] show)
+		public void generatePatch(Rocket start, ParametersEnum.Parameters[] param, double[,] limits, int count, IdmCic.API.Model.Mainsystem.Element e, double mach, bool[] show, int distrib)
 		{
 
 
 			double[,] globalData = new double[count, show.Count(c => true) + param.Length];
 			for(int i = 0; i < count; i++)
 			{
-				double[] par = randomizeRocket(start, param, limits);
+				double[] par = randomizeRocket(start, param, limits, distrib);
 				double[] datas = getData(start, mach);
 				double[] sim = getSimData(start, e);
 
@@ -127,23 +127,23 @@ namespace RocketDesigner
 		 *			min1 max1
 		 *			...
 		 */
-		public Double[] randomizeRocket(Rocket start, ParametersEnum.Parameters[] param, double[,] limits)
+		public Double[] randomizeRocket(Rocket start, ParametersEnum.Parameters[] param, double[,] limits, int distrib)
 		{
 			Fin fin0 = getFin(start);
 			int i = 0;
 			double[] pa = new double[param.Length];
 			foreach(ParametersEnum.Parameters p in param)
 			{
-				pa[i] = changeParameterRan(fin0, p, limits[i, 0], limits[i, 1]);
+				pa[i] = changeParameterRan(fin0, p, limits[i, 0], limits[i, 1], distrib);
 				i++;
 			}
 			return pa;
 		}
 
 
-		public double changeParameterRan(Fin f, ParametersEnum.Parameters pm, double min, double max)
+		public double changeParameterRan(Fin f, ParametersEnum.Parameters pm, double min, double max,int distrib)
 		{
-			double ran = randomizer(min, max);
+			double ran = randomizer(min, max, distrib);
 			switch (pm)
 			{
 				case ParametersEnum.Parameters.TIPCHORD:
@@ -173,9 +173,19 @@ namespace RocketDesigner
 			return ran;
 		}
 		
-		public double randomizer(double min, double max)
+		public double randomizer(double min, double max, int distrib)
 		{
-			return ran.NextDouble() * (max-min) + min;
+			if(distrib == 1)
+				return ran.NextDouble() * (max-min) + min;
+			if (distrib == 0)
+            {
+				double u1 = 1.0 - ran.NextDouble(); //uniform(0,1] random doubles
+				double u2 = 1.0 - ran.NextDouble();
+				double randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) *
+							 Math.Sin(2.0 * Math.PI * u2); //random normal(0,1)
+				return max + min * randStdNormal; //random normal (mean,deviation²)
+			}
+			return ran.NextDouble() * (max - min) + min;
 		}
 
 		private Fin getFin(Rocket r)

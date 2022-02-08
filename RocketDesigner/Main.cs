@@ -32,7 +32,7 @@ namespace RocketDesigner
 
 
 		public static string folderPath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\RocketDesigner\\");
-		public static string version = "0.5.1";
+		public static string version = "0.5.2";
 
 
 		private PluginAction calculateAero;
@@ -354,7 +354,7 @@ namespace RocketDesigner
 						lim[0, 0] = f.min1;
 						lim[1, 1] = f.max2;
 						lim[1, 0] = f.min2;
-						g.generatePatch(r, param, lim, f.nbr, e,f.machnbr, f.getShow());
+						g.generatePatch(r, param, lim, f.nbr, e,f.machnbr, f.getShow(),f.distrib);
 
 					}
 				}
