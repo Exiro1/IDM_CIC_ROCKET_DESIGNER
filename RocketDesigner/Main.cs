@@ -44,6 +44,7 @@ namespace RocketDesigner
 		private PluginAction launchSimu;
 		private PluginAction launchSimu6ddl;
 		private PluginAction generateBatch;
+		private PluginAction optimizeFin;
 
 		private PluginButton calculateAeroBtn;
 		private PluginButton OpenRASBtn;
@@ -53,6 +54,7 @@ namespace RocketDesigner
 		private PluginButton launchSimuBtn;
 		private PluginButton launchSimu6ddlBtn;
 		private PluginButton generateBatchBtn;
+		private PluginButton optimizeFinBtn;
 		private PluginCheckBox checkbox;
 
 		private PluginObjectAction NoseConeAddAction;
@@ -118,6 +120,7 @@ namespace RocketDesigner
 			yield return launchSimu;
 			yield return launchSimu6ddl;
 			yield return generateBatch;
+			yield return optimizeFin;
 		}
 		// Expose the control to the Hosting application
 		public override System.Collections.Generic.IEnumerable<PluginControl> GetControls()
@@ -131,6 +134,7 @@ namespace RocketDesigner
 			yield return launchSimuBtn;
 			yield return launchSimu6ddlBtn;
 			yield return generateBatchBtn;
+			yield return optimizeFinBtn;
 		}
 
 		public override string Description
@@ -165,6 +169,7 @@ namespace RocketDesigner
 			launchSimu6ddl = new PluginAction("launchSimu6ddl", launchSimu6ddlImpl);
 			testCheck = new PluginAction("test_action", SolidworksVisibleImpl);
 			generateBatch = new PluginAction("generateBatch", generateBatchImpl);
+			optimizeFin = new PluginAction("optimizeFin", optimizeImpl);
 
 			calculateAeroBtn = new PluginButton("calculateAero_button", "Calculate aero coef", calculateAero, "Rocket Designer", "Aerodynamics");
 			OpenRASBtn = new PluginButton("openRas_button", "Open RASAero II", openRas, "Rocket Designer", "File Creator");
@@ -174,7 +179,8 @@ namespace RocketDesigner
 			checkbox = new PluginCheckBox("sw_visible", "SolidWorks Visible", testCheck, "Rocket Designer", "Other");
 			launchSimuBtn = new PluginButton("launchSimu_button", "Launch Simulation 3DDL", launchSimu, "Rocket Designer", "Aerodynamics");
 			launchSimu6ddlBtn = new PluginButton("launchSimu_button", "Launch Simulation 6DDL", launchSimu6ddl, "Rocket Designer", "Aerodynamics");
-			generateBatchBtn = new PluginButton("generateBatch_button", "Generate Data", generateBatch, "Rocket Designer", "Aerodynamics");
+			generateBatchBtn = new PluginButton("generateBatch_button", "Generate Data", generateBatch, "Rocket Designer", "Data Analysis");
+			optimizeFinBtn = new PluginButton("optimizeFin_button", "Optimize Fin", optimizeFin, "Rocket Designer", "Data Analysis");
 			//IdmCic_tab
 
 
@@ -223,6 +229,9 @@ namespace RocketDesigner
 			generateBatchBtn.IsVisibleAfterLoadingMainSystem = matlabAvailable;
 			generateBatchBtn.LargeStyle = true;
 
+			optimizeFinBtn.IsVisibleAtStartUp = false;
+			optimizeFinBtn.IsVisibleAfterLoadingMainSystem = true;
+			optimizeFinBtn.LargeStyle = true;
 
 			/*
 			Excel.Application oXL;
@@ -330,6 +339,67 @@ namespace RocketDesigner
 			}
 		}
 
+		public void optimizeImpl(PluginActionArgs args)
+        {
+			foreach (Element e in args.MainSystem.Elements)
+			{
+				foreach (RelatedSubsystem s in e.RelatedSubsystems)
+				{
+					Rocket r = Rocket.getRocketFromElement(s);
+					if (r != null)
+					{
+						Optimize f = new Optimize();
+						f.ShowDialog();
+						if (f.cancel)
+							return;
+
+						Datagen g = new Datagen(matlabUtil, aerodynamics);
+
+						double[] result = g.optimizeFin(r,e,0.5,f.pop,f.keep,f.epoch);
+						if (result == null)
+						{
+							MessageBox.Show("no fin profile satisfies the minimum static margin");
+						}
+						else
+						{
+							MessageBox.Show("sweep : " + result[0] + "\n" + "tipchord : " + result[1] + "\n" + "thickness : " + result[2] + "\n" + "chord : " + result[3] + "\n" + "position : " + result[4] + "\n" + "span : " + result[5]);
+							
+							Fin fin = getFin(r);
+							fin.span = result[5];
+							fin.sweepDist = result[0];
+							fin.TipChord = result[1];
+							fin.thickness = result[2];
+							fin.chord = result[3];
+							//fin.Loc = result[4];
+
+							string filec = r.generateXMLFile(e.Name.Replace(" ", ""));
+							System.IO.File.Copy(filec, folderPath + "optimized.CDX1", true);
+							string assemblyFolder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+							string exefile = Path.Combine(assemblyFolder, "RAS2.exe");
+							Process p = new Process();
+							p.StartInfo = new ProcessStartInfo(exefile);
+							p.StartInfo.WorkingDirectory = assemblyFolder;
+							p.StartInfo.Arguments = folderPath + "optimized.CDX1";
+							p.Start();
+						}
+					}
+				}
+			}
+		}
+
+		private Fin getFin(Rocket r)
+		{
+			RocketElement el = r.getNosecone();
+			while (el.Bot != null)
+			{
+				if (el.SideAttach.Count > 0)
+				{
+					return (Fin)el.SideAttach.First();
+				}
+				el = el.Bot;
+			}
+			return null;
+		}
 
 		public void generateBatchImpl(PluginActionArgs args)
 		{
@@ -354,7 +424,7 @@ namespace RocketDesigner
 						lim[0, 0] = f.min1;
 						lim[1, 1] = f.max2;
 						lim[1, 0] = f.min2;
-						g.generatePatch(r, param, lim, f.nbr, e,f.machnbr, f.getShow(),f.distrib);
+						g.getResult(r, param, lim, f.nbr, e,f.machnbr, f.getShow(),f.distrib);
 
 					}
 				}

@@ -161,6 +161,7 @@ namespace RocketDesigner
 				object result = null;
 				System.Array input = new double[10];
 				matlab.getMatlabInstance().Execute(@"cd " + Main.folderPath + "\\matlab\\3ddl");
+				matlab.getMatlabInstance().Execute("clear all");
 				matlab.getMatlabInstance().PutWorkspaceData("CP", "base", cp);
 				matlab.getMatlabInstance().PutWorkspaceData("CA", "base", ca);
 				matlab.getMatlabInstance().PutWorkspaceData("CNa", "base", cn);
@@ -303,10 +304,10 @@ namespace RocketDesigner
 			var r = sheet.Range["M2"].Resize[size, 1];
 			var array = (object[,]) r.Value;
 			double[] d = new double[size];
-			for (int i = 1; i < size; i++)
+			for (int i = 0; i < size; i++)
 			{
 				
-				d[i] = toMeter((double)array[i, 1]);
+				d[i] = toMeter((double)array[i+1, 1]);
 			}
 			return (object)d;
 		}
@@ -318,9 +319,9 @@ namespace RocketDesigner
 			var r = sheet.Range["L2"].Resize[size, 1];
 			var array = (object[,]) r.Value;
 			double[] d = new double[size];
-			for (int i = 1; i < size; i++)
+			for (int i = 0; i < size; i++)
 			{
-				d[i] = (double)array[i, 1];
+				d[i] = (double)array[i+1, 1];
 			}
 			return (object)d;
 		}
@@ -332,9 +333,9 @@ namespace RocketDesigner
 			var r = sheet.Range["G2"].Resize[600, 1];
 			var array = (object[,]) r.Value;
 			double[] d = new double[size];
-			for (int i = 1; i < size; i++)
+			for (int i = 0; i < size; i++)
 			{
-				d[i] = (double)array[i, 1];
+				d[i] = (double)array[i+1, 1];
 			}
 			return (object)d;
 		}

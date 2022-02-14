@@ -67,6 +67,19 @@
     <Compile Include="BatchGnerator.Designer.cs">
       <DependentUpon>BatchGnerator.cs</DependentUpon>
     </Compile>
+    <Compile Include="MultiDimensionalArrayExtensions.cs" />
+    <Compile Include="Optimize.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Optimize.Designer.cs">
+      <DependentUpon>Optimize.cs</DependentUpon>
+    </Compile>
+    <Compile Include="progressBarCustom.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="progressBarCustom.Designer.cs">
+      <DependentUpon>progressBarCustom.cs</DependentUpon>
+    </Compile>
     <Compile Include="SolidTank.cs" />
     <Compile Include="LiquidTank.cs" />
     <Compile Include="Matlab.cs" />
@@ -105,6 +118,12 @@
   <ItemGroup>
     <EmbeddedResource Include="BatchGnerator.resx">
       <DependentUpon>BatchGnerator.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Optimize.resx">
+      <DependentUpon>Optimize.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="progressBarCustom.resx">
+      <DependentUpon>progressBarCustom.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

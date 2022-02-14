@@ -323,6 +323,13 @@ namespace RocketDesigner
 						RocketElement el2 = r.getElement(attachedTo);
 						el2.addSideAttach(el1);
 					}
+					else if (typeof(LiquidTank).IsInstanceOfType(el1) || typeof(SolidTank).IsInstanceOfType(el1))
+					{
+						string attachedTo = ((EquipmentInstance)ei.ParentCoordinateSystem.Parent).Equipment.Name;
+						RocketElement el2 = r.getElement(attachedTo);
+						el1.Top = el2;
+						//el2.Bot = el1;  (faut trouver une solution à ce probleme)
+					}
 					else
 					{
 						string attachedTo = ((EquipmentInstance)ei.ParentCoordinateSystem.Parent).Equipment.Name;

@@ -122,7 +122,7 @@ namespace RocketDesigner
 				Part.ClearSelection2(true);
 
 
-				Part.SketchManager.CreateEquationSpline2("", "(( (" + r * r + "+" + h * h + ")/(2*" + r + ") )^2-(" + h + "-x)^2)^(1/2) + " + r + " - (" + r * r + "+" + h * h + ")/(2*" + r + ")", "", "0", "" + h, false, 0, 0, 0, true, true);
+				Part.SketchManager.CreateEquationSpline2("", "(( (" + (r * r).ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + "+" + (h * h).ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + ")/(2*" + r.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + ") )^2-(" + h.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + "-x)^2)^(1/2) + " + r.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + " - (" + (r * r).ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + "+" + (h * h).ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + ")/(2*" + r.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + ")", "", "0", "" + h.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture), false, 0, 0, 0, true, true);
 
 				Part.ClearSelection2(true);
 
@@ -150,7 +150,7 @@ namespace RocketDesigner
 				Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
 				Part.EditSketch();
 				Part.ClearSelection2(true);
-				Part.SketchManager.CreateEquationSpline2("", "(( (" + r * r + "+" + h * h + ")/(2*" + r + ") )^2-(" + h + "-x)^2)^(1/2) + " + r + " - (" + r * r + "+" + h * h + ")/(2*" + r + ") - " + th, "", "0", "" + h, false, 0, 0, 0, true, true);
+				Part.SketchManager.CreateEquationSpline2("", "(( (" + (r * r).ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + "+" + (h * h).ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture)  + ")/(2*" + r.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + ") )^2-(" + h.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + "-x)^2)^(1/2) + " + r.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + " - (" + (r * r).ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + "+" + (h * h).ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + ")/(2*" + r.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + ") - " + th.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture), "", "0", "" + h.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture), false, 0, 0, 0, true, true);
 				Part.ClearSelection2(true);
 				Part.SketchManager.InsertSketch(true);
 
