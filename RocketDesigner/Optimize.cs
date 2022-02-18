@@ -20,7 +20,7 @@ namespace RocketDesigner
 
         public bool cancel = true;
         public int pop, keep, epoch;
-
+        public double ms;
 
 
         private void buttonOptimize_Click(object sender, EventArgs e)
@@ -28,6 +28,7 @@ namespace RocketDesigner
             pop = (int)numericUpDownPop.Value;
             keep = (int)numericUpDownKeep.Value;
             epoch = (int)numericUpDownEpoch.Value;
+            ms = (double)numericUpDownMs.Value;
             cancel = false;
             Close();
         }

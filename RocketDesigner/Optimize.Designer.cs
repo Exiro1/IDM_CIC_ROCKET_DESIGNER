@@ -35,14 +35,17 @@
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.numericUpDownEpoch = new System.Windows.Forms.NumericUpDown();
+            this.numericUpDownMs = new System.Windows.Forms.NumericUpDown();
+            this.label4 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownPop)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownKeep)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownEpoch)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownMs)).BeginInit();
             this.SuspendLayout();
             // 
             // buttonOptimize
             // 
-            this.buttonOptimize.Location = new System.Drawing.Point(116, 101);
+            this.buttonOptimize.Location = new System.Drawing.Point(116, 123);
             this.buttonOptimize.Name = "buttonOptimize";
             this.buttonOptimize.Size = new System.Drawing.Size(75, 23);
             this.buttonOptimize.TabIndex = 0;
@@ -98,11 +101,40 @@
             this.numericUpDownEpoch.Size = new System.Drawing.Size(120, 20);
             this.numericUpDownEpoch.TabIndex = 6;
             // 
+            // numericUpDownMs
+            // 
+            this.numericUpDownMs.DecimalPlaces = 2;
+            this.numericUpDownMs.Location = new System.Drawing.Point(164, 90);
+            this.numericUpDownMs.Minimum = new decimal(new int[] {
+            100,
+            0,
+            0,
+            -2147483648});
+            this.numericUpDownMs.Name = "numericUpDownMs";
+            this.numericUpDownMs.Size = new System.Drawing.Size(120, 20);
+            this.numericUpDownMs.TabIndex = 8;
+            this.numericUpDownMs.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(36, 92);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(88, 13);
+            this.label4.TabIndex = 7;
+            this.label4.Text = "Min Static margin";
+            // 
             // Optimize
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(315, 133);
+            this.ClientSize = new System.Drawing.Size(314, 158);
+            this.Controls.Add(this.numericUpDownMs);
+            this.Controls.Add(this.label4);
             this.Controls.Add(this.numericUpDownEpoch);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
@@ -115,6 +147,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownPop)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownKeep)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownEpoch)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownMs)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -129,5 +162,7 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.NumericUpDown numericUpDownEpoch;
+        private System.Windows.Forms.NumericUpDown numericUpDownMs;
+        private System.Windows.Forms.Label label4;
     }
 }

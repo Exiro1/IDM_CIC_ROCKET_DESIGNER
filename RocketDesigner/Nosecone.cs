@@ -10,8 +10,8 @@ namespace RocketDesigner
 	public class Nosecone : RocketElement
 	{
 
-		public enum NoseConeShape { Tangent }
-
+		public enum NoseConeShape { Tangent, VonKarman }
+		
 		public Nosecone(NoseConeShape shape, double len, double radius, double bluntRadius, double density,double thickness)
 		{
 			this.shape = shape;
@@ -22,6 +22,35 @@ namespace RocketDesigner
 			this.thickness = thickness;
 			Loc = 0;
 		}
+
+		public string ShapeToString(NoseConeShape shape, bool rasaero)
+        {
+			if (rasaero)
+			{
+				switch (shape)
+				{
+					case NoseConeShape.Tangent:
+						return "Tangent Ogive";
+					case NoseConeShape.VonKarman:
+						return "Von Karman Ogive";
+
+					default: return "Tangent Ogive";
+				}
+            }
+            else
+            {
+				switch (shape)
+				{
+					case NoseConeShape.Tangent:
+						return "ogive";
+					case NoseConeShape.VonKarman:
+						return "Von Karman Ogive";
+
+					default: return "ogive";
+				}
+			}
+        }
+
 
 		public NoseConeShape shape;
 		public double radius;
@@ -35,7 +64,7 @@ namespace RocketDesigner
 			writer.WriteElementString("PartType", "NoseCone");
 			writer.WriteElementString("Length", toInch(Len).ToString());
 			writer.WriteElementString("Diameter", toInch(radius * 2).ToString());
-			writer.WriteElementString("Shape", "Tangent Ogive");
+			writer.WriteElementString("Shape", ShapeToString(shape,true));
 			writer.WriteElementString("BluntRadius", toInch(bluntRadius).ToString());
 			writer.WriteElementString("Location", toInch(Loc).ToString());
 			writer.WriteElementString("Color", "Black");
@@ -57,7 +86,7 @@ namespace RocketDesigner
 
 			writer.WriteElementString("length", (Len).ToString().Replace(",", "."));
 			writer.WriteElementString("thickness", (thickness).ToString().Replace(",", "."));
-			writer.WriteElementString("shape", "ogive");
+			writer.WriteElementString("shape", ShapeToString(shape, false));
 			writer.WriteElementString("shapeparameter", "1.0");
 			writer.WriteElementString("aftradius", (radius).ToString().Replace(",","."));
 			writer.WriteElementString("aftshoulderradius", "0.0");

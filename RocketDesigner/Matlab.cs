@@ -69,10 +69,21 @@ namespace RocketDesigner
 			return available;
         }
 		public bool isInstalled()
-		{
+        {
 			return installed;
 		}
+		public void displayOpti(ParametersEnum.Parameters[] param, double[,] globalData, bool[] show)
+		{
+			if (!loadMatlab())
+				return;
 
+			object result = null;
+			matlab.PutWorkspaceData("opti", "base", globalData);
+
+			matlab.Execute("figure");
+			matlab.Execute("plot(opti)");
+
+		}
 		public void displayGraphs(ParametersEnum.Parameters[] param, double[,] globalData, bool[] show)
 		{
 			if (!loadMatlab())

@@ -21,7 +21,7 @@ namespace RocketDesigner
 
 		public void EngineFileAddActionImpl(PluginObjectActionArgs args)
 		{
-			if (((Equipment)args.IdmObject).GetProperty("RocketEngine") != null)
+			if (((Equipment)args.IdmObject).GetProperty("RocketNozzle") != null)
 			{
 				OpenFileDialog openFileDialog1 = new OpenFileDialog
 				{
@@ -119,49 +119,49 @@ namespace RocketDesigner
 			return part + id;
 		}
 
-		public void EngineAddActionImpl(PluginObjectActionArgs args)
+		public void NozzleAddActionImpl(PluginObjectActionArgs args)
 		{
 			((Equipment)args.IdmObject).MciDataOrigin = MciDataOrigin.FromGeometry;
-			IdmCic.API.Model.IdmProperties.Property propType = ((Equipment)args.IdmObject).AddProperty("RocketEngine", IdmCic.API.Model.IdmProperties.IdmPropertyType.Bool);
-			propType.Name = "RocketEngine";
+			IdmCic.API.Model.IdmProperties.Property propType = ((Equipment)args.IdmObject).AddProperty("RocketNozzle", IdmCic.API.Model.IdmProperties.IdmPropertyType.Bool);
+			propType.Name = "RocketNozzle";
 			propType.Value = true;
 			propType.Hidden = true;
 
-			IdmCic.API.Model.IdmProperties.Property propTopRadius = ((Equipment)args.IdmObject).AddProperty("engCr", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
+			IdmCic.API.Model.IdmProperties.Property propTopRadius = ((Equipment)args.IdmObject).AddProperty("nozCr", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
 			propTopRadius.Name = "Chamber Radius";
 			propTopRadius.Value = 0.290;
 
 
-			IdmCic.API.Model.IdmProperties.Property propBotRadius = ((Equipment)args.IdmObject).AddProperty("engNr", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
+			IdmCic.API.Model.IdmProperties.Property propBotRadius = ((Equipment)args.IdmObject).AddProperty("nozNr", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
 			propBotRadius.Name = "Nozzle Radius";
 			propBotRadius.Value = 0.15;
 
-			IdmCic.API.Model.IdmProperties.Property propThroat = ((Equipment)args.IdmObject).AddProperty("engNt", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
+			IdmCic.API.Model.IdmProperties.Property propThroat = ((Equipment)args.IdmObject).AddProperty("nozNt", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
 			propThroat.Name = "Nozzle Throat";
 			propThroat.Value = 0.075;
 
-			IdmCic.API.Model.IdmProperties.Property propHeight = ((Equipment)args.IdmObject).AddProperty("engHn", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propHeight.Name = "Height Nozzle";
+			IdmCic.API.Model.IdmProperties.Property propHeight = ((Equipment)args.IdmObject).AddProperty("nozHn", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
+			propHeight.Name = "Height exit side";
 			propHeight.Value = 0.2;
 
-			IdmCic.API.Model.IdmProperties.Property propHeight2 = ((Equipment)args.IdmObject).AddProperty("engHc", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
-			propHeight2.Name = "Height Chamber";
+			IdmCic.API.Model.IdmProperties.Property propHeight2 = ((Equipment)args.IdmObject).AddProperty("nozHc", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
+			propHeight2.Name = "Height Chamber side";
 			propHeight2.Value = 0.3;
 
 
-			IdmCic.API.Model.IdmProperties.Property propTh = ((Equipment)args.IdmObject).AddProperty("engTh", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
+			IdmCic.API.Model.IdmProperties.Property propTh = ((Equipment)args.IdmObject).AddProperty("nozTh", IdmCic.API.Model.IdmProperties.IdmPropertyType.Distance);
 			propTh.Name = "Thickness";
 			propTh.Value = 0.01;
 
-			IdmCic.API.Model.IdmProperties.Property propDensity = ((Equipment)args.IdmObject).AddProperty("engDe", IdmCic.API.Model.IdmProperties.IdmPropertyType.Density);
+			IdmCic.API.Model.IdmProperties.Property propDensity = ((Equipment)args.IdmObject).AddProperty("nozDe", IdmCic.API.Model.IdmProperties.IdmPropertyType.Density);
 			propDensity.Name = "Density";
 			propDensity.Value = 1780;
 
-			IdmCic.API.Model.IdmProperties.Property propRmix = ((Equipment)args.IdmObject).AddProperty("engRMix", IdmCic.API.Model.IdmProperties.IdmPropertyType.DecimalWithoutUnit);
+			IdmCic.API.Model.IdmProperties.Property propRmix = ((Equipment)args.IdmObject).AddProperty("nozRMix", IdmCic.API.Model.IdmProperties.IdmPropertyType.DecimalWithoutUnit);
 			propRmix.Name = "Mixing Ratio";
 			propRmix.Value = 6;
 
-			IdmCic.API.Model.IdmProperties.Property propISP = ((Equipment)args.IdmObject).AddProperty("engISP", IdmCic.API.Model.IdmProperties.IdmPropertyType.DecimalWithoutUnit);
+			IdmCic.API.Model.IdmProperties.Property propISP = ((Equipment)args.IdmObject).AddProperty("nozISP", IdmCic.API.Model.IdmProperties.IdmPropertyType.DecimalWithoutUnit);
 			propISP.Name = "ISP";
 			propISP.Value = 260;
 
@@ -169,9 +169,9 @@ namespace RocketDesigner
 				return;
 
 			IdmCic.API.Model.Subsystems.Shape shape = ((Equipment)args.IdmObject).AddShape(IdmCic.API.Model.Physics.Objects3D.Object3dType.HollowCone);
-			shape.Name = "RocketChamber";
+			shape.Name = "RocketNozzleUp";
 
-			((Equipment)args.IdmObject).Name = getNewID((RelatedSubsystem)((Equipment)args.IdmObject).Parent, "RocketEngine");
+			((Equipment)args.IdmObject).Name = getNewID((RelatedSubsystem)((Equipment)args.IdmObject).Parent, "RocketNozzle");
 
 			HollowCone o1 = (HollowCone)(shape.ShapeDefinition);
 			o1.SetPropertyFormula("D1", "mm_m(m_mm([" + propTopRadius.FullId.ToLower() + "_value]))");
@@ -183,7 +183,7 @@ namespace RocketDesigner
 			shape.MassDefinition.MassType = MassType.Volume;
 
 			shape = ((Equipment)args.IdmObject).AddShape(IdmCic.API.Model.Physics.Objects3D.Object3dType.HollowCone);
-			shape.Name = "RocketNozzle";
+			shape.Name = "RocketNozzleDown";
 			HollowCone o2 = (HollowCone)(shape.ShapeDefinition);
 			o2.SetPropertyFormula("D1", "mm_m(m_mm([" + propThroat.FullId.ToLower() + "_value]))");
 			o2.SetPropertyFormula("D2", "mm_m(m_mm([" + propBotRadius.FullId.ToLower() + "_value]))");
@@ -194,7 +194,7 @@ namespace RocketDesigner
 			shape.MassDefinition.MassType = MassType.Volume;
 
 			shape = ((Equipment)args.IdmObject).AddShape(IdmCic.API.Model.Physics.Objects3D.Object3dType.FilledCylinder);
-			shape.Name = "TopChamber";
+			shape.Name = "TopNozzle";
 			FilledCylinder o3 = (FilledCylinder)(shape.ShapeDefinition);
 			o3.SetPropertyFormula("D1", "mm_m(m_mm([" + propTopRadius.FullId.ToLower() + "_value]))");
 			o3.SetPropertyFormula("D3", "mm_m(5)");
@@ -413,6 +413,10 @@ namespace RocketDesigner
 			IdmCic.API.Model.IdmProperties.Property propDensity = ((Equipment)args.IdmObject).AddProperty("noseconeDe", IdmCic.API.Model.IdmProperties.IdmPropertyType.Density);
 			propDensity.Name = "Density";
 			propDensity.Value = 1780;
+
+			IdmCic.API.Model.IdmProperties.Property proType = ((Equipment)args.IdmObject).AddProperty("noseconeTy", IdmCic.API.Model.IdmProperties.IdmPropertyType.IntegerWithoutUnit);
+			propDensity.Name = "Type";
+			propDensity.Value = 0;
 
 
 			((Equipment)args.IdmObject).Name = getNewID((RelatedSubsystem)((Equipment)args.IdmObject).Parent, "RocketNoseCone");
@@ -704,7 +708,7 @@ namespace RocketDesigner
 			o2.SetPropertyFormula("D4", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))");
 			o2.SetPropertyFormula("angle1", "180");
 			o2.SetPropertyFormula("angle2", "360");
-			bopp2.Position.SetPropertyFormula("z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value]))");
+			bopp2.Position.SetPropertyFormula("z", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value]-2*[" + propRad.FullId.ToLower() + "_value]))");
 			bopp2.Position.SetPropertyFormula("Rotation1", "-90");
 
 			BooleanOperation bopp3 = ((IdmCic.API.Model.Physics.Objects3D.Miscs.Topology)shape.ShapeDefinition).AddBooleanOperation(IdmCic.API.Model.Physics.Objects3D.Object3dType.HollowCylinder);
@@ -713,6 +717,9 @@ namespace RocketDesigner
 			o3.SetPropertyFormula("D1", "mm_m(m_mm([" + propRad.FullId.ToLower() + "_value]))");
 			o3.SetPropertyFormula("D3", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value]))");
 			o3.SetPropertyFormula("D4", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))");
+
+			shape.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propRad.FullId.ToLower() + "_value]))");
+
 
 		}
 	}

@@ -32,7 +32,7 @@ namespace RocketDesigner
 
 
 		public static string folderPath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\RocketDesigner\\");
-		public static string version = "0.5.2";
+		public static string version = "0.5.5";
 
 
 		private PluginAction calculateAero;
@@ -249,7 +249,7 @@ namespace RocketDesigner
 			BodyAddAction = new PluginObjectAction("body_add_action", typeof(Equipment), compCreator.BodyAddActionImpl);
 			TransiAddAction = new PluginObjectAction("transi_add_action", typeof(Equipment), compCreator.TransitionAddActionImpl);
 			AssemblyAddAction = new PluginObjectAction("assembly_add_action", typeof(Assembly), compCreator.AssemblyAddActionImpl);
-			EngineAddAction = new PluginObjectAction("engine_add_action", typeof(Equipment), compCreator.EngineAddActionImpl);
+			EngineAddAction = new PluginObjectAction("engine_add_action", typeof(Equipment), compCreator.NozzleAddActionImpl);
 			EngineFileAddAction = new PluginObjectAction("engine_file_add_action", typeof(Equipment), compCreator.EngineFileAddActionImpl);
 			LtankAddAction = new PluginObjectAction("liquid_tank_add_action", typeof(Equipment), compCreator.LiquidTankAddActionImpl);
 			StankAddAction = new PluginObjectAction("solid_tank_add_action", typeof(Equipment), compCreator.SolidTankAddActionImpl);
@@ -259,7 +259,7 @@ namespace RocketDesigner
 			BodyAddButton = new PluginObjectButton("body_add_button", "Add Rocket Body", BodyAddAction);
 			TransiAddButton = new PluginObjectButton("transi_add_button", "Add Rocket Transition", TransiAddAction);
 			AssemblyAddButton = new PluginObjectButton("assembly_add_button", "Set As Rocket Assembly", AssemblyAddAction);
-			EngineAddButton = new PluginObjectButton("engine_add_button", "Add Rocket Engine", EngineAddAction);
+			EngineAddButton = new PluginObjectButton("engine_add_button", "Add Rocket Nozzle", EngineAddAction);
 			EngineFileAddButton = new PluginObjectButton("engine_file_add_button", "set Engine .eng File", EngineFileAddAction);
 			LtankAddButton = new PluginObjectButton("liquid_tank_add_button", "Add Liquid Tank", LtankAddAction);
 			StankAddButton = new PluginObjectButton("solid_tank_add_button", "Add Solid Tank", StankAddAction);
@@ -352,10 +352,10 @@ namespace RocketDesigner
 						f.ShowDialog();
 						if (f.cancel)
 							return;
-
+						
 						Datagen g = new Datagen(matlabUtil, aerodynamics);
 
-						double[] result = g.optimizeFin(r,e,0.5,f.pop,f.keep,f.epoch);
+						double[] result = g.optimizeFin(r,e,f.ms,f.pop,f.keep,f.epoch);
 						if (result == null)
 						{
 							MessageBox.Show("no fin profile satisfies the minimum static margin");
@@ -363,8 +363,10 @@ namespace RocketDesigner
 						else
 						{
 							MessageBox.Show("sweep : " + result[0] + "\n" + "tipchord : " + result[1] + "\n" + "thickness : " + result[2] + "\n" + "chord : " + result[3] + "\n" + "position : " + result[4] + "\n" + "span : " + result[5]);
-							
+							MessageBox.Show("Optimized max alt : " + result[6] + " m / initial max alt : "+result[8]+" m\n" + "Optimized min Ms : " + result[7] +" cal / initial min Ms : "+result[9]+" cal\n");
+
 							Fin fin = getFin(r);
+						
 							fin.span = result[5];
 							fin.sweepDist = result[0];
 							fin.TipChord = result[1];
@@ -381,11 +383,47 @@ namespace RocketDesigner
 							p.StartInfo.WorkingDirectory = assemblyFolder;
 							p.StartInfo.Arguments = folderPath + "optimized.CDX1";
 							p.Start();
+							DialogResult dialogResult = MessageBox.Show("Apply Optimisation ?", "Optimisation", MessageBoxButtons.YesNo);
+							if(dialogResult == DialogResult.Yes)
+								applyFinParameter(fin.span, fin.sweepDist, fin.TipChord, fin.chord, fin.Loc, s);
 						}
 					}
 				}
 			}
 		}
+
+		public void applyFinParameter(double span, double sweep, double tipchord, double chord, double loc, RelatedSubsystem r)
+		{
+			
+			Assembly rocket = null;
+			foreach (IdmCic.API.Model.Subsystems.Assembly e in r.Assemblies.ToList())
+			{
+				if (e.GetProperty("Rocket") != null)
+				{
+					rocket = e;
+				}
+			}
+			if (rocket != null)
+			{
+				foreach (EquipmentInstance ei in rocket.EquipmentInstances.ToList())
+				{
+					Equipment e = ei.Equipment;
+
+					if (e.GetProperty("RocketFin") != null)
+					{
+						double alpha = Math.Atan(span / sweep) * 180 / Math.PI;
+						double beta = Math.Atan2(span, -chord + sweep + tipchord) * 180 / Math.PI;
+						e.GetProperty("finh").Value = span;
+						e.GetProperty("fina1").Value = alpha;
+						e.GetProperty("fina2").Value = beta;
+						e.GetProperty("finl").Value = chord;
+						return; //evite de faire tout les ailerons
+					}
+				}
+			}
+		}
+
+
 
 		private Fin getFin(Rocket r)
 		{
@@ -681,8 +719,13 @@ namespace RocketDesigner
 			IdmCic.API.Model.IdmProperties.Property propHeight = noseCone.GetProperty("noseconeH");
 			IdmCic.API.Model.IdmProperties.Property propTh = noseCone.GetProperty("noseconeTh");
 
+			IdmCic.API.Model.IdmProperties.Property propType = noseCone.GetProperty("noseconeTy");
+			int type = 0;
+			if (propType != null)
+            {
+				type = (int)propType.Value;
 
-
+			}
 
 
 
@@ -691,7 +734,7 @@ namespace RocketDesigner
 
 			if (swUtil.loadSW())
 			{
-				swUtil.updateSWNoseFile((double)propRadius.Value * 1000, (double)propHeight.Value * 1000, (double)propTh.Value * 1000);
+				swUtil.updateSWNoseFile((double)propRadius.Value * 1000, (double)propHeight.Value * 1000, (double)propTh.Value * 1000,type);
 				var fileName = folderPath + "nosecone2.STEP";
 				((IdmCic.API.Model.Physics.Objects3D.Miscs.Step)noseCone.Shapes.First().ShapeDefinition).D2 = 1;
 				((IdmCic.API.Model.Physics.Objects3D.Miscs.Step)noseCone.Shapes.First().ShapeDefinition).D3 = 1;

@@ -60,7 +60,7 @@
     <Compile Include="Aerodynamics.cs" />
     <Compile Include="ComponentCreator.cs" />
     <Compile Include="Datagen.cs" />
-    <Compile Include="Engine.cs" />
+    <Compile Include="Nozzle.cs" />
     <Compile Include="BatchGnerator.cs">
       <SubType>Form</SubType>
     </Compile>

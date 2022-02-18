@@ -12,7 +12,7 @@ namespace RocketDesigner
 {
 	public class Rocket
 	{
-		private Engine engine;
+		private Nozzle engine;
 		private Nosecone nose;
 		public Dictionary<string, RocketElement> elems;
 		public List<RocketElement> tanks;
@@ -33,7 +33,7 @@ namespace RocketDesigner
 			elems[element.Name] = element;
 		}
 
-		public Engine getEngine()
+		public Nozzle getEngine()
 		{
 			return engine;
 		}
@@ -252,7 +252,27 @@ namespace RocketDesigner
 				}
 				else if (e.GetProperty("RocketNoseCone") != null)
 				{
-					Nosecone n = new Nosecone(Nosecone.NoseConeShape.Tangent, (double)e.GetProperty("noseconeH").Value, (double)e.GetProperty("noseconeR").Value, 0, (double)e.GetProperty("noseconeDe").Value, (double)e.GetProperty("noseconeTh").Value);
+
+					int type = 0;
+					if (e.GetProperty("noseconeTy") != null)
+					{
+						type = (int)e.GetProperty("noseconeTy").Value;
+					}
+					Nosecone.NoseConeShape shape = Nosecone.NoseConeShape.Tangent;
+					switch (type)
+                    {
+						case 0:
+							shape = Nosecone.NoseConeShape.Tangent;
+							break;
+						case 1:
+							shape = Nosecone.NoseConeShape.VonKarman;
+							break;
+						default:
+							shape = Nosecone.NoseConeShape.Tangent;
+							break;
+					}
+
+					Nosecone n = new Nosecone(shape, (double)e.GetProperty("noseconeH").Value, (double)e.GetProperty("noseconeR").Value, 0, (double)e.GetProperty("noseconeDe").Value, (double)e.GetProperty("noseconeTh").Value);
 					n.Name = e.Name;
 					if (n.radius > r.radius)
 						r.radius = n.radius;
@@ -265,11 +285,11 @@ namespace RocketDesigner
 					tr.Name = e.Name;
 					r.addElement(tr);
 				}
-				else if (e.GetProperty("RocketEngine") != null)
+				else if (e.GetProperty("RocketNozzle") != null)
 				{
 					if (e.GetDocument("1") != null)
 					{
-						Engine eng = new Engine(e.GetDocument("1").GetFullFilePath(), (double)e.GetProperty("engNr").Value, (double)e.GetProperty("engRMix").Value, (double)e.GetProperty("engISP").Value);
+						Nozzle eng = new Nozzle(e.GetDocument("1").GetFullFilePath(), (double)e.GetProperty("nozNr").Value, (double)e.GetProperty("nozRMix").Value, (double)e.GetProperty("nozISP").Value);
 						eng.Name = e.Name;
 						r.addElement(eng);
 						r.engine = eng;

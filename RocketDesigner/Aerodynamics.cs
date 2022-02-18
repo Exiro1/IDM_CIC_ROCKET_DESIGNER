@@ -80,7 +80,7 @@ namespace RocketDesigner
 				if (typeof(SolidTank).IsInstanceOfType(t))
 				{
 					SolidTank st = (SolidTank)t;
-					if (((SolidTank)t).type == 0)
+					if (((SolidTank)t).type == 0)//oxydant
 					{
 						sheet.Range["C13"].FormulaR1C1Local = 1;
 						sheet.Range["D13"].FormulaR1C1Local = st.height*1000; //in simu Z = X
@@ -88,7 +88,7 @@ namespace RocketDesigner
 						sheet.Range["F13"].FormulaR1C1Local = st.solidMass;
 						sheet.Range["G13"].FormulaR1C1Local = st.cogZ*1000;
 					}
-					else if(st.type == 1)
+					else if(st.type == 1)//reducteur
 					{
 						sheet.Range["C14"].FormulaR1C1Local = 1;
 						sheet.Range["D14"].FormulaR1C1Local = st.height*1000; //in simu Z = X
@@ -176,7 +176,7 @@ namespace RocketDesigner
 				if (showGraph) { 
 				MessageBox.Show("Status du vol : " + status.Split(';')[0].Remove(0, 17) + "\n" +
 					"Altitude max : " + status.Split(';')[1] + " m\n" +
-					"Marge statique min : " + status.Split(';')[2] + " m\n" +
+					"Marge statique min : " + status.Split(';')[2] + " calibre\n" +
 					"Qinf max : " + status.Split(';')[3] + " Pa\n" +
 					"Mach max : " + status.Split(';')[4].Replace("\"\n\n", "") + "\n"
 				);
@@ -291,7 +291,7 @@ namespace RocketDesigner
 
 
 		static object getThrust(Rocket r) {
-			Engine eng = (Engine)r.getEngine();
+			Nozzle eng = (Nozzle)r.getEngine();
 			eng.unpack();
 			return (object)eng.values;
 		}

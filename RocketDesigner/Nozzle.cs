@@ -8,9 +8,9 @@ using System.Xml;
 
 namespace RocketDesigner
 {
-	public class Engine : RocketElement
+	public class Nozzle : RocketElement
 	{
-		public Engine(string engFile, double radius, double rMix, double ISP)
+		public Nozzle(string engFile, double radius, double rMix, double ISP)
 		{
 			this.As = radius*radius*Math.PI;
 			path = engFile;

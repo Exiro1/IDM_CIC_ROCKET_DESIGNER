@@ -29,23 +29,37 @@ namespace RocketDesigner
 			matlab.displayGraphs(param, datas, show);
 		}
 
+		public Process showRocket(Rocket r)
+        {
+			string filec = r.generateXMLFile("gen");
+			//System.IO.File.Copy(filec, Main.folderPath + "gen.CDX1", true);
+			string assemblyFolder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+			string exefile = Path.Combine(assemblyFolder, "RAS2.exe");
+			Process p = new Process();
+			p.StartInfo = new ProcessStartInfo(exefile);
+			p.StartInfo.WorkingDirectory = assemblyFolder;
+			p.StartInfo.Arguments = Main.folderPath + "gen.CDX1";
+			p.Start();
+			return p;
+		}
 
-
-		public double[,] generatePatch(Rocket start, ParametersEnum.Parameters[] param, double[,] limits, int count, IdmCic.API.Model.Mainsystem.Element e, double mach, bool[] dataToSave, int distrib)
+		public double[,] generatePatch(Rocket start, ParametersEnum.Parameters[] param, double[,] limits, int count, IdmCic.API.Model.Mainsystem.Element e, double mach, bool[] dataToSave, int distrib, double area = 0)
 		{
-
 			progressBarCustom pbc = new progressBarCustom();
 			pbc.Show();
-			pbc.TopMost = true;
+			//pbc.TopMost = true;
 			double[,] globalData = new double[count, dataToSave.Count(c => true) + param.Length];
 			int progress=0;
 			for (int i = 0; i < count; i++)
 			{
-				double[] par = randomizeRocket(start, param, limits, distrib);
+				
+				double[] par = randomizeRocket(start, param, limits, distrib, area);
+				
 				progress++;
 				pbc.SetProgressBarValue((int) ((100.0*progress)/(count*3.0)));
 				double[] datas = getData(start, mach);
 				progress++;
+				//Process p = showRocket(start);
 				pbc.SetProgressBarValue((int)((100.0 * progress) / (count * 3.0)));
 				double[] sim = getSimData(start, e);
 				progress++;
@@ -77,7 +91,9 @@ namespace RocketDesigner
 					}
 					k++;
 				}
+				//p.Kill();
 			}
+			
 			pbc.Close();
 			return globalData;
 		}
@@ -89,6 +105,7 @@ namespace RocketDesigner
         {
 			double[,] globaldata = new double[epoch*generationPop,8];
 			int globalIndex = 0;
+			double area;
 			ParametersEnum.Parameters[] param = new ParametersEnum.Parameters[] { ParametersEnum.Parameters.SWEEP, ParametersEnum.Parameters.TIPCHORD, ParametersEnum.Parameters.THICKNESS, ParametersEnum.Parameters.CHORD, ParametersEnum.Parameters.POSITION, ParametersEnum.Parameters.SPAN };
 			double[,] limits = new double[param.Length, 2];
 			double [] startFin = new double[] { getFin(start).sweepDist , getFin(start).TipChord , getFin(start).thickness , getFin(start).chord , getFin(start).Loc , getFin(start).span };
@@ -99,13 +116,22 @@ namespace RocketDesigner
 			limits[1, 1] = startFin[1];
 			limits[1, 0] = startFin[1] * 0.1;
 			limits[2, 1] = startFin[2];
-			limits[2, 0] = startFin[2] * 0.1;
+			limits[2, 0] = startFin[2] * 0.0;
 			limits[3, 1] = startFin[3];
 			limits[3, 0] = startFin[3] * 0.1;
 			limits[4, 1] = startFin[4];
-			limits[4, 0] = startFin[4] * 0.1;
+			limits[4, 0] = startFin[4] * 0.0;
 			limits[5, 1] = startFin[5];
 			limits[5, 0] = startFin[5] * 0.1;
+			area = (startFin[5]/2)*(startFin[3]+startFin[1]);
+
+			double[] datas0 = getData(start, 1.01);
+			double[] sim0 = getSimData(start, e);
+			xlApptemp.Workbooks[xlApptemp.Workbooks.Count].Close(false);
+
+			double altinit = sim0[0];
+			double minms = sim0[1];
+
 			double[,] bests = new double[keep,10];
 			double[,] g;
 			for (int i = 0; i < epoch; i++)
@@ -113,40 +139,41 @@ namespace RocketDesigner
 				g = generatePatch(start, param, limits, generationPop, e, 1, datatosave, 0);
 				for(int k = 0; k < generationPop; k++)
                 {
-					globaldata[k+globalIndex,0] = g[k,0];
-					globaldata[k + globalIndex, 1] = g[k, 1];
-					globaldata[k + globalIndex, 2] = g[k, 2];
-					globaldata[k + globalIndex, 3] = g[k, 3];
-					globaldata[k + globalIndex, 4] = g[k, 4];
-					globaldata[k + globalIndex, 5] = g[k, 5];
-					globaldata[k + globalIndex, 6] = g[k, 6];
-					globaldata[k + globalIndex, 7] = g[k, 7];
+					globaldata[globalIndex,0] = g[k,0];
+					globaldata[globalIndex, 1] = g[k, 1];
+					globaldata[globalIndex, 2] = g[k, 2];
+					globaldata[globalIndex, 3] = g[k, 3];
+					globaldata[globalIndex, 4] = g[k, 4];
+					globaldata[globalIndex, 5] = g[k, 5];
+					globaldata[globalIndex, 6] = g[k, 6];
+					globaldata[globalIndex, 7] = g[k, 7];
+					globalIndex++;
 				}
 				bests = eliminate(g, keep, minMs);
 				if (bests[0, 6] == 0)
 					return null;
-				limits = getNewGeneration(bests, 0.1);
+				limits = getNewGeneration(bests, 0.05,area);
 			}
-			
-			matlab.displayGraphs(param, globaldata, datatosave);
-
-			return new double[] {bests[0,0], bests[0, 1] , bests[0, 2] , bests[0, 3] , bests[0, 4] , bests[0, 5] };
+			matlab.displayOpti(param, globaldata, datatosave);
+			globaldata = globaldata.OrderByDescending(x => x[6]);
+			//matlab.displayOpti(param, globaldata, datatosave);
+			return new double[] { globaldata[0, 0], globaldata[0, 1], globaldata[0, 2], globaldata[0, 3], globaldata[0, 4], globaldata[0, 5], globaldata[0, 6], globaldata[0, 7], altinit ,minMs};
 		}
 
-		private double[,] getNewGeneration(double[,] bests, double deviation)
+		private double[,] getNewGeneration(double[,] bests, double deviation, double area)
         {
 			double[,] limits = new double[bests.GetLength(1)-2, 2];
 			double[] startFin = new double[bests.GetLength(1) - 2];
 			double d = 0;
 			for (int i = 0; i < bests.GetLength(0); i++)
             {
-				startFin[0] += bests[i, 0]*Math.Pow(2, bests.GetLength(0)-i);
-				startFin[1] += bests[i, 1] * Math.Pow(2, bests.GetLength(0) - i);
-				startFin[2] += bests[i, 2] * Math.Pow(2, bests.GetLength(0) - i);
-				startFin[3] += bests[i, 3] * Math.Pow(2, bests.GetLength(0) - i);
-				startFin[4] += bests[i, 4] * Math.Pow(2, bests.GetLength(0) - i);
-				startFin[5] += bests[i, 5] * Math.Pow(2, bests.GetLength(0) - i);
-				d += Math.Pow(2, bests.GetLength(0) - i);
+				startFin[0] += bests[i, 0] * bests[i, 6];
+				startFin[1] += bests[i, 1] * bests[i, 6];
+				startFin[2] += bests[i, 2] * bests[i, 6];
+				startFin[3] += bests[i, 3] * bests[i, 6];
+				startFin[4] += bests[i, 4] * bests[i, 6];
+				startFin[5] += bests[i, 5] * bests[i, 6];
+				d += bests[i, 6];
 			}
 			startFin[0] /= d;
 			startFin[1] /= d;
@@ -159,11 +186,11 @@ namespace RocketDesigner
 			limits[1, 1] = startFin[1];
 			limits[1, 0] = startFin[1] * deviation;
 			limits[2, 1] = startFin[2];
-			limits[2, 0] = startFin[2] * deviation;
+			limits[2, 0] = startFin[2] * 0;
 			limits[3, 1] = startFin[3];
 			limits[3, 0] = startFin[3] * deviation;
 			limits[4, 1] = startFin[4];
-			limits[4, 0] = startFin[4] * deviation;
+			limits[4, 0] = startFin[4] * 0;
 			limits[5, 1] = startFin[5];
 			limits[5, 0] = startFin[5] * deviation;
 			return limits;
@@ -172,7 +199,7 @@ namespace RocketDesigner
 
 		private double[,] eliminate(double[,] g, int keep, double minMs)
         {
-			g = g.OrderBy(x => x[6]); //sort by altitude
+			g = g.OrderByDescending(x => x[6]); //sort by altitude
 			double[,] keepElem = new double[keep, 8];
 			int added = 0;
 			for (int i = 0; i < g.GetLength(0); i++)
@@ -275,7 +302,7 @@ namespace RocketDesigner
 		 *			min1 max1
 		 *			...
 		 */
-		public Double[] randomizeRocket(Rocket start, ParametersEnum.Parameters[] param, double[,] limits, int distrib)
+		public Double[] randomizeRocket(Rocket start, ParametersEnum.Parameters[] param, double[,] limits, int distrib, double area)
 		{
 			Fin fin0 = getFin(start);
 			int i = 0;
@@ -284,6 +311,17 @@ namespace RocketDesigner
 			{
 				pa[i] = changeParameterRan(fin0, p, limits[i, 0], limits[i, 1], distrib);
 				i++;
+			}
+			if (area > 0)
+			{
+				fin0.TipChord = Math.Max(0,(2 * area / fin0.span) - fin0.chord);
+				i = 0;
+				foreach (ParametersEnum.Parameters p in param)
+				{
+					if (p == ParametersEnum.Parameters.TIPCHORD)
+						pa[i] = fin0.TipChord;
+					i++;
+				}
 			}
 			return pa;
 		}
