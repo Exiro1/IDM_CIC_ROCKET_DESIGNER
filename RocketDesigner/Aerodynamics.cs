@@ -32,6 +32,19 @@ namespace RocketDesigner
 			CNa(assemb);
 		}
 
+		private Fin getFin(Rocket r)
+		{
+			RocketElement el = r.getNosecone();
+			while (el.Bot != null)
+			{
+				if (el.SideAttach.Count > 0)
+				{
+					return (Fin)el.SideAttach.First();
+				}
+				el = el.Bot;
+			}
+			return null;
+		}
 
 		public void writeExcel(Element e, Rocket r,string path, bool runsimu, bool showGraph)
         {
@@ -63,6 +76,7 @@ namespace RocketDesigner
 
 
 			//STRUCTURE
+			Fin fin = getFin(r);
 			sheet = (Worksheet)wb.Worksheets["Structure"];
 			sheet.Activate();
 			double dryMass = e.GetMass(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.None);
@@ -73,6 +87,12 @@ namespace RocketDesigner
 			sheet.Range["F9"].FormulaR1C1Local = dry.X*1000;
 			sheet.Range["G9"].FormulaR1C1Local = r.getLen()*1000;
 			sheet.Range["H9"].FormulaR1C1Local = r.getRadius() * 2*1000;
+
+			sheet.Range["I9"].FormulaR1C1Local = 33000000000;// shear modulus
+			sheet.Range["J9"].FormulaR1C1Local = (fin.thickness/ fin.chord);// thickness/chord
+			double area = (fin.span / 2) * (fin.chord + fin.TipChord);
+			sheet.Range["K9"].FormulaR1C1Local = ((fin.chord* fin.chord)/area);// chord²/area
+			sheet.Range["L9"].FormulaR1C1Local = (fin.TipChord/fin.chord);// tipchord/chord
 
 			//TANKS
 			foreach (RocketElement t in r.tanks)
@@ -183,67 +203,6 @@ namespace RocketDesigner
 				}
 				return new double[] {alt, ms, qinf, mach,err };
 			}
-
-			/*
-			IdmCic.API.Model.Physics.Point dry = e.GetCog(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.None);
-
-			double dryMass = e.GetMass(IdmCic.API.Utils.Calculation.MCI.ElementMassOptions.None);
-
-			
-
-			object cp = getCP(600);
-			object ca = getCA(600);
-			object cn = getCN(600);
-			object thrust = getThrust(r);
-
-			double sref = 2;
-
-			//tank :  x,y,z,mass,maxMass,h,type (0 = liquid; 1 = solid)
-			var tank = new object[r.tanks.Count,7];
-			int indext = 0;
-			foreach(RocketElement t in r.tanks){
-                if (typeof(SolidTank).IsInstanceOfType(t))
-                {
-					SolidTank tt = (SolidTank) t;
-					tank[indext, 0] = tt.cogX;
-					tank[indext, 1] = tt.cogX;
-					tank[indext, 2] = tt.cogX;
-					tank[indext, 3] = tt.solidMass;
-					tank[indext, 4] = tt.maxSolidMass;
-					tank[indext, 5] = tt.height;
-					tank[indext, 6] = 1;
-				}
-				else if (typeof(SolidTank).IsInstanceOfType(t))
-				{
-					LiquidTank tt = (LiquidTank)t;
-					tank[indext, 0] = tt.cogX;
-					tank[indext, 1] = tt.cogX;
-					tank[indext, 2] = tt.cogX;
-					tank[indext, 3] = tt.liquidMass;
-					tank[indext, 4] = tt.maxLiquidMass;
-					tank[indext, 5] = tt.height;
-					tank[indext, 6] = 0;
-				}
-			}
-
-
-			if (matlab.loadMatlab())
-			{
-				object result = null;
-				System.Array input = new double[10];
-				matlab.getMatlabInstance().Feval("simu3ddl2", 4, out result, tank, (double)dryMass, thrust, ca, cp, cn, (double)sref, (double)r.getLen(), (double)0, 0, 0, r.getEngine().getAs(), 0);
-				//matlab.Feval("simu3ddl2", 2, out result, 1,2);
-				object[] res = result as object[];
-				matlab.getMatlabInstance().Execute("save('simData')");
-				string status = (string) res[3];
-				MessageBox.Show("Status du vol : "+status.Split(';')[0]+"\n"+
-					"Altitude max : " + status.Split(';')[1] + " m\n" +
-					"Marge statique min : " + status.Split(';')[2] + " m\n" +
-					"Qinf max : " + status.Split(';')[3] + " Pa\n" +
-					"Mach max : " + status.Split(';')[4] + "\n"
-				);
-			}
-			*/
 			return null;
 		}
 

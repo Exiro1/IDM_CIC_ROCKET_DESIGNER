@@ -20,6 +20,13 @@ namespace RocketDesigner
 
         public bool cancel = true;
         public int pop, keep, epoch;
+        public double[] deviation;
+
+        private void Optimize_Load(object sender, EventArgs e)
+        {
+
+        }
+
         public double ms;
 
 
@@ -29,6 +36,9 @@ namespace RocketDesigner
             keep = (int)numericUpDownKeep.Value;
             epoch = (int)numericUpDownEpoch.Value;
             ms = (double)numericUpDownMs.Value;
+
+            deviation = new double[] { (double)numericSweep.Value*0.01, (double)numericTip.Value * 0.01, (double)numericTh.Value * 0.01, (double)numericChord.Value * 0.01, (double)numericPos.Value * 0.01, (double)numericSpan.Value * 0.01 };
+
             cancel = false;
             Close();
         }

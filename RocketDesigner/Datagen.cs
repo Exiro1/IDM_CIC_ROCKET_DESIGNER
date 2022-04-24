@@ -7,12 +7,32 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using IdmCic.API;
+using System.Drawing.Imaging;
+using System.Drawing;
+using System.Windows.Forms;
+using System.Runtime.InteropServices;
 
 namespace RocketDesigner
 {
-    partial class Datagen
+	
+
+	partial class Datagen
 	{
-		
+		private class User32
+		{
+			[StructLayout(LayoutKind.Sequential)]
+			public struct Rect
+			{
+				public int left;
+				public int top;
+				public int right;
+				public int bottom;
+			}
+
+			[DllImport("user32.dll")]
+			public static extern IntPtr GetWindowRect(IntPtr hWnd, ref Rect rect);
+		}
+
 		Random ran;
 		Matlab matlab;
 		Aerodynamics aero;
@@ -29,16 +49,16 @@ namespace RocketDesigner
 			matlab.displayGraphs(param, datas, show);
 		}
 
-		public Process showRocket(Rocket r)
+		public Process showRocket(Rocket r, double alt)
         {
-			string filec = r.generateXMLFile("gen");
-			//System.IO.File.Copy(filec, Main.folderPath + "gen.CDX1", true);
+			string filec = r.generateXMLFile("gen_test");
+			System.IO.File.Copy(filec, Main.folderPath + "alt_"+((int)alt)+"_m.CDX1", true);
 			string assemblyFolder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 			string exefile = Path.Combine(assemblyFolder, "RAS2.exe");
 			Process p = new Process();
 			p.StartInfo = new ProcessStartInfo(exefile);
 			p.StartInfo.WorkingDirectory = assemblyFolder;
-			p.StartInfo.Arguments = Main.folderPath + "gen.CDX1";
+			p.StartInfo.Arguments = Main.folderPath + "alt_" + ((int)alt) + "_m.CDX1";
 			p.Start();
 			return p;
 		}
@@ -47,7 +67,7 @@ namespace RocketDesigner
 		{
 			progressBarCustom pbc = new progressBarCustom();
 			pbc.Show();
-			//pbc.TopMost = true;
+			pbc.TopMost = true;
 			double[,] globalData = new double[count, dataToSave.Count(c => true) + param.Length];
 			int progress=0;
 			for (int i = 0; i < count; i++)
@@ -91,6 +111,7 @@ namespace RocketDesigner
 					}
 					k++;
 				}
+				globalData[i, j] = sim[4];
 				//p.Kill();
 			}
 			
@@ -101,36 +122,39 @@ namespace RocketDesigner
 		
 
 		//return best design after [epoch] number of generation -> return double[] {sweep,tipchord,thickness,chord,position,span};
-		public double[] optimizeFin(Rocket start, IdmCic.API.Model.Mainsystem.Element e, double minMs,int generationPop, int keep,int epoch)
+		public double[] optimizeFin(Rocket start, IdmCic.API.Model.Mainsystem.Element e, double minMs,int generationPop, int keep,int epoch, double[] devi)
         {
-			double[,] globaldata = new double[epoch*generationPop,8];
+			double[,] globaldata = new double[epoch*generationPop,9];
 			int globalIndex = 0;
 			double area;
 			ParametersEnum.Parameters[] param = new ParametersEnum.Parameters[] { ParametersEnum.Parameters.SWEEP, ParametersEnum.Parameters.TIPCHORD, ParametersEnum.Parameters.THICKNESS, ParametersEnum.Parameters.CHORD, ParametersEnum.Parameters.POSITION, ParametersEnum.Parameters.SPAN };
 			double[,] limits = new double[param.Length, 2];
-			double [] startFin = new double[] { getFin(start).sweepDist , getFin(start).TipChord , getFin(start).thickness , getFin(start).chord , getFin(start).Loc , getFin(start).span };
+			Fin f = getFin(start);
+			double [] startFin = new double[] { f.sweepDist , f.TipChord , f.thickness , f.chord , f.Loc , f.span };
 			bool[] datatosave = new bool[] { false, false, false, true, true, false, false };
 
 			limits[0, 1] = startFin[0];
-			limits[0, 0] = startFin[0] * 0.1;
+			limits[0, 0] = startFin[0] * devi[0];
 			limits[1, 1] = startFin[1];
-			limits[1, 0] = startFin[1] * 0.1;
+			limits[1, 0] = startFin[1] * devi[1];
 			limits[2, 1] = startFin[2];
-			limits[2, 0] = startFin[2] * 0.0;
+			limits[2, 0] = startFin[2] * devi[2];
 			limits[3, 1] = startFin[3];
-			limits[3, 0] = startFin[3] * 0.1;
+			limits[3, 0] = startFin[3] * devi[3];
 			limits[4, 1] = startFin[4];
-			limits[4, 0] = startFin[4] * 0.0;
+			limits[4, 0] = startFin[4] * devi[4];
 			limits[5, 1] = startFin[5];
-			limits[5, 0] = startFin[5] * 0.1;
-			area = (startFin[5]/2)*(startFin[3]+startFin[1]);
+			limits[5, 0] = startFin[5] * devi[5];
+			area = (startFin[5]/2)*(startFin[3]+startFin[1]); // (span/2)*(chord+tipchord)
 
 			double[] datas0 = getData(start, 1.01);
 			double[] sim0 = getSimData(start, e);
 			xlApptemp.Workbooks[xlApptemp.Workbooks.Count].Close(false);
 
-			double altinit = sim0[0];
-			double minms = sim0[1];
+			double altinitsim = sim0[0];
+			double minmssim = sim0[1];
+
+			screenShot(start, limits, -1, altinitsim, minmssim);
 
 			double[,] bests = new double[keep,10];
 			double[,] g;
@@ -145,35 +169,76 @@ namespace RocketDesigner
 					globaldata[globalIndex, 3] = g[k, 3];
 					globaldata[globalIndex, 4] = g[k, 4];
 					globaldata[globalIndex, 5] = g[k, 5];
-					globaldata[globalIndex, 6] = g[k, 6];
-					globaldata[globalIndex, 7] = g[k, 7];
+					globaldata[globalIndex, 6] = g[k, 6]; //alt
+					globaldata[globalIndex, 7] = g[k, 7]; //ms
+					globaldata[globalIndex, 8] = g[k, 8]; //err
 					globalIndex++;
 				}
 				bests = eliminate(g, keep, minMs);
 				if (bests[0, 6] == 0)
 					return null;
-				limits = getNewGeneration(bests, 0.05,area);
+
+				limits = getNewGeneration(bests, area, devi);
+				//show result of this gen
+				screenShot(start, limits, i, bests[0,6], bests[0,7]);
+				
 			}
 			matlab.displayOpti(param, globaldata, datatosave);
 			globaldata = globaldata.OrderByDescending(x => x[6]);
-			//matlab.displayOpti(param, globaldata, datatosave);
-			return new double[] { globaldata[0, 0], globaldata[0, 1], globaldata[0, 2], globaldata[0, 3], globaldata[0, 4], globaldata[0, 5], globaldata[0, 6], globaldata[0, 7], altinit ,minMs};
+			for (int i = 0; i < globaldata.GetLength(0); i++)
+			{
+				if (globaldata[i, 7] > minMs && globaldata[i, 8] == 0) //no error + Ms > minMs 
+				{
+					return new double[] { globaldata[i, 0], globaldata[i, 1], globaldata[i, 2], globaldata[i, 3], globaldata[i, 4], globaldata[i, 5], globaldata[i, 6], globaldata[i, 7], altinitsim, minmssim };
+				}
+			}
+			return new double[] { globaldata[0, 0], globaldata[0, 1], globaldata[0, 2], globaldata[0, 3], globaldata[0, 4], globaldata[0, 5], globaldata[0, 6], globaldata[0, 7], altinitsim ,minmssim};
 		}
 
-		private double[,] getNewGeneration(double[,] bests, double deviation, double area)
+		public void screenShot(Rocket start, double[,] limits, int index, double alt, double ms)
+        {
+			start.setFin(changeParam(getFin(start), new double[] { limits[0, 1], limits[1, 1], limits[2, 1], limits[3, 1], limits[4, 1], limits[5, 1] }), 0);
+			Process p = showRocket(start, alt);
+
+			System.Threading.Thread.Sleep(4000);
+
+			var rect = new User32.Rect();
+			User32.GetWindowRect(p.MainWindowHandle, ref rect);
+
+			int width = rect.right - rect.left;
+			int height = rect.bottom - rect.top;
+
+			var bmp = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+			using (Graphics graphics = Graphics.FromImage(bmp))
+			{
+				graphics.CopyFromScreen(rect.left, rect.top, 0, 0, new Size(width, height), CopyPixelOperation.SourceCopy);
+			}
+			bmp.Save(Main.folderPath + @"\img\gen_"+(index+1)+"_alt_"+((int) alt) +"_ms_"+ms.ToString("F", System.Globalization.CultureInfo.InvariantCulture) + ".png", ImageFormat.Png);
+
+			p.Kill();
+			p.WaitForExit();
+			File.Delete(Main.folderPath + "alt_" + ((int)alt) + "_m.CDX1");
+
+		}
+
+
+		private double[,] getNewGeneration(double[,] bests, double area, double[] devi)
         {
 			double[,] limits = new double[bests.GetLength(1)-2, 2];
 			double[] startFin = new double[bests.GetLength(1) - 2];
 			double d = 0;
 			for (int i = 0; i < bests.GetLength(0); i++)
-            {
-				startFin[0] += bests[i, 0] * bests[i, 6];
-				startFin[1] += bests[i, 1] * bests[i, 6];
-				startFin[2] += bests[i, 2] * bests[i, 6];
-				startFin[3] += bests[i, 3] * bests[i, 6];
-				startFin[4] += bests[i, 4] * bests[i, 6];
-				startFin[5] += bests[i, 5] * bests[i, 6];
-				d += bests[i, 6];
+			{
+				if (bests[i, 0] != 0 || bests[i, 1] != 0)
+				{
+					startFin[0] += bests[i, 0] * bests[i, 6];
+					startFin[1] += bests[i, 1] * bests[i, 6];
+					startFin[2] += bests[i, 2] * bests[i, 6];
+					startFin[3] += bests[i, 3] * bests[i, 6];
+					startFin[4] += bests[i, 4] * bests[i, 6];
+					startFin[5] += bests[i, 5] * bests[i, 6];
+					d += bests[i, 6];
+				}
 			}
 			startFin[0] /= d;
 			startFin[1] /= d;
@@ -182,17 +247,17 @@ namespace RocketDesigner
 			startFin[4] /= d;
 			startFin[5] /= d;
 			limits[0, 1] = startFin[0];
-			limits[0, 0] = startFin[0] * deviation;
+			limits[0, 0] = startFin[0] * devi[0];
 			limits[1, 1] = startFin[1];
-			limits[1, 0] = startFin[1] * deviation;
+			limits[1, 0] = startFin[1] * devi[1];
 			limits[2, 1] = startFin[2];
-			limits[2, 0] = startFin[2] * 0;
+			limits[2, 0] = startFin[2] * devi[2];
 			limits[3, 1] = startFin[3];
-			limits[3, 0] = startFin[3] * deviation;
+			limits[3, 0] = startFin[3] * devi[3];
 			limits[4, 1] = startFin[4];
-			limits[4, 0] = startFin[4] * 0;
+			limits[4, 0] = startFin[4] * devi[4];
 			limits[5, 1] = startFin[5];
-			limits[5, 0] = startFin[5] * deviation;
+			limits[5, 0] = startFin[5] * devi[5];
 			return limits;
 		}
 
@@ -200,11 +265,11 @@ namespace RocketDesigner
 		private double[,] eliminate(double[,] g, int keep, double minMs)
         {
 			g = g.OrderByDescending(x => x[6]); //sort by altitude
-			double[,] keepElem = new double[keep, 8];
+			double[,] keepElem = new double[keep, 9];
 			int added = 0;
 			for (int i = 0; i < g.GetLength(0); i++)
 			{
-				if (g[i, 7] > minMs)
+				if (g[i, 7] > minMs && g[i,8] == 0) //no error + Ms > minMs 
 				{
 					keepElem[added, 0] = g[i, 0];
 					keepElem[added, 1] = g[i, 1];
@@ -214,27 +279,19 @@ namespace RocketDesigner
 					keepElem[added, 5] = g[i, 5];
 					keepElem[added, 6] = g[i, 6];
 					keepElem[added, 7] = g[i, 7];
+					keepElem[added, 8] = g[i, 8];
 					added++;
 				}
 				if (added >= keep)
 					break;
 			}
+			/*
 			if(added>0)
 				ResizeArray<double>(ref keepElem, added, keepElem.GetLength(1));
+			*/
 			return keepElem;
 		}
-
-		void ResizeArray<T>(ref T[,] original, int newCoNum, int newRoNum)
-		{
-			var newArray = new T[newCoNum, newRoNum];
-			int columnCount = original.GetLength(1);
-			int columnCount2 = newRoNum;
-			int columns = original.GetUpperBound(0);
-			for (int co = 0; co <= columns; co++)
-				Array.Copy(original, co * columnCount, newArray, co * columnCount2, columnCount);
-			original = newArray;
-		}
-
+		
 
 
 		private double[] getSimData(Rocket start, IdmCic.API.Model.Mainsystem.Element e)
@@ -312,20 +369,39 @@ namespace RocketDesigner
 				pa[i] = changeParameterRan(fin0, p, limits[i, 0], limits[i, 1], distrib);
 				i++;
 			}
+
+			//constraint
+			fin0.TipChord = Math.Min(fin0.chord, fin0.TipChord);
 			if (area > 0)
 			{
-				fin0.TipChord = Math.Max(0,(2 * area / fin0.span) - fin0.chord);
-				i = 0;
-				foreach (ParametersEnum.Parameters p in param)
-				{
-					if (p == ParametersEnum.Parameters.TIPCHORD)
-						pa[i] = fin0.TipChord;
-					i++;
-				}
+				fin0.TipChord = Math.Max(0, (2 * area / fin0.span) - fin0.chord);
 			}
+			fin0.sweepDist = Math.Min(fin0.sweepDist, Math.Max(0,fin0.chord-fin0.TipChord/4));
+			
+			i = 0;
+			foreach (ParametersEnum.Parameters p in param)
+			{
+				if (p == ParametersEnum.Parameters.TIPCHORD)
+					pa[i] = fin0.TipChord;
+				if (p == ParametersEnum.Parameters.SWEEP)
+					pa[i] = fin0.TipChord;
+				i++;
+			}
+			
 			return pa;
 		}
 
+
+		public Fin  changeParam(Fin fin, double[] values)
+        {
+			fin.span = values[5];
+			fin.sweepDist = values[0];
+			fin.TipChord = values[1];
+			fin.thickness = values[2];
+			fin.chord = values[3];
+			//fin.Loc = result[4];
+			return fin;
+		}
 
 		public double changeParameterRan(Fin f, ParametersEnum.Parameters pm, double min, double max,int distrib)
 		{
@@ -379,11 +455,12 @@ namespace RocketDesigner
 			RocketElement el = r.getNosecone();
 			while (el.Bot != null)
 			{
-				if(el.SideAttach.Count > 0)
+				el = el.Bot;
+				if (el.SideAttach.Count > 0)
 				{
 					return (Fin) el.SideAttach.First();
 				}
-				el = el.Bot;
+				
 			}
 			return null;
 		}

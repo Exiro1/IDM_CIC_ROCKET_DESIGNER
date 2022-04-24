@@ -71,9 +71,9 @@ namespace RocketDesigner
 			}
 			CoordinateSystemDefinition cog = ass.AddCoordinateSystem();
 			cog.Name = "COG";
-			cog.Position.SetPropertyFormula("X", "[" + ass.GetFullPropertyName("GetCog(ITkCt)_x") + "]");
-			cog.Position.SetPropertyFormula("Y", "[" + ass.GetFullPropertyName("GetCog(ITkCt)_y") + "]");
-			cog.Position.SetPropertyFormula("Z", "[" + ass.GetFullPropertyName("GetCog(ITkCt)_z") + "]");
+			cog.Position.SetPropertyFormula("X", "[" + ass.GetFullPropertyName("GetCog()_x") + "]");
+			cog.Position.SetPropertyFormula("Y", "[" + ass.GetFullPropertyName("GetCog()_y") + "]");
+			cog.Position.SetPropertyFormula("Z", "[" + ass.GetFullPropertyName("GetCog()_z") + "]");
 
 			IdmCic.API.Model.IdmProperties.Property propMach = ass.AddProperty("mach", IdmCic.API.Model.IdmProperties.IdmPropertyType.DecimalWithoutUnit);
 			propMach.Name = "Mach";
@@ -415,8 +415,8 @@ namespace RocketDesigner
 			propDensity.Value = 1780;
 
 			IdmCic.API.Model.IdmProperties.Property proType = ((Equipment)args.IdmObject).AddProperty("noseconeTy", IdmCic.API.Model.IdmProperties.IdmPropertyType.IntegerWithoutUnit);
-			propDensity.Name = "Type";
-			propDensity.Value = 0;
+			proType.Name = "Type";
+			proType.Value = 0;
 
 
 			((Equipment)args.IdmObject).Name = getNewID((RelatedSubsystem)((Equipment)args.IdmObject).Parent, "RocketNoseCone");
@@ -715,7 +715,7 @@ namespace RocketDesigner
 			HollowCylinder o3 = (HollowCylinder)(bopp3.Object3d);
 			bopp3.OperationType = OperationType.Union;
 			o3.SetPropertyFormula("D1", "mm_m(m_mm([" + propRad.FullId.ToLower() + "_value]))");
-			o3.SetPropertyFormula("D3", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value]))");
+			o3.SetPropertyFormula("D3", "mm_m(m_mm([" + propH.FullId.ToLower() + "_value]-2*[" + propRad.FullId.ToLower() + "_value]))");
 			o3.SetPropertyFormula("D4", "mm_m(m_mm([" + propTh.FullId.ToLower() + "_value]))");
 
 			shape.Position.SetPropertyFormula("Z", "mm_m(m_mm([" + propRad.FullId.ToLower() + "_value]))");

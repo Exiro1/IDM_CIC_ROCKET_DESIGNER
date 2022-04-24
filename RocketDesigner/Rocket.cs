@@ -28,6 +28,29 @@ namespace RocketDesigner
 			tanks = new List<RocketElement>();
 		}
 
+
+		public int setFin(Fin f, int index)
+        {
+			RocketElement el = getNosecone();
+			int i = 0;
+			while (el.Bot != null)
+			{
+				if (el.SideAttach.Count > 0)
+				{
+					if (index == i)
+					{
+						el.SideAttach[0] = f;
+						return 0;
+					}
+					i++;
+					
+				}
+				el = el.Bot;
+			}
+			return 1;
+		}
+
+
 		public void addElement(RocketElement element)
 		{
 			elems[element.Name] = element;

@@ -32,7 +32,7 @@ namespace RocketDesigner
 
 
 		public static string folderPath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "idmcic_data\\plugins\\RocketDesigner\\");
-		public static string version = "0.5.5";
+		public static string version = "0.5.6";
 
 
 		private PluginAction calculateAero;
@@ -355,7 +355,7 @@ namespace RocketDesigner
 						
 						Datagen g = new Datagen(matlabUtil, aerodynamics);
 
-						double[] result = g.optimizeFin(r,e,f.ms,f.pop,f.keep,f.epoch);
+						double[] result = g.optimizeFin(r,e,f.ms,f.pop,f.keep,f.epoch,f.deviation);
 						if (result == null)
 						{
 							MessageBox.Show("no fin profile satisfies the minimum static margin");

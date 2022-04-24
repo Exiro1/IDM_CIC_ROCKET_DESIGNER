@@ -206,6 +206,138 @@ namespace RocketDesigner
         }
 
 
+        public void generateNoseConeMold(double r, double h, double th, int type)
+        {
+            if (!loadSW())
+                return;
+
+            if (swApp == null)
+                solidWorksNotStartedException();
+
+            int err = 0;
+            int warn = 0;
+
+            double x = 0;
+            double y = 0;
+
+            var fileName = Main.folderPath + "Pièce.SLDPRT";
+
+            //((int)swUserPreferenceStringValue_e.swDefaultTemplatePart)
+            swApp.NewDocument(swApp.GetUserPreferenceStringValue(8), 0, 0, 0);
+
+            swApp.ActivateDoc2("Pièce.SLDPRT", false, err);
+
+            ModelDoc2 Part = (ModelDoc2)swApp.ActiveDoc;
+
+            var myModelView = Part.ActiveView;
+            swApp.SetUserPreferenceToggle((int)swUserPreferenceToggle_e.swInputDimValOnCreate, false);
+
+
+            Part.InsertSketch();
+            Part.Extension.SelectByID2("Plan de face", "PLANE", 0, 0, 0, false, 0, null, 0);
+            Part.ClearSelection2(true);
+
+            Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+
+
+
+            Part.InsertSketch();
+            Part.Extension.SelectByID2("Plan de face", "PLANE", 0, 0, 0, false, 0, null, 0);
+            Part.ClearSelection2(true);
+
+            Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+            //Part.SelectedFeatureProperties(0, 0, 0, 0, 0, 0, 0, true, false, "Esquisse");
+            Part.EditSketch();
+            Part.ClearSelection2(true);
+
+            if (type == 0)
+                Part.SketchManager.CreateEquationSpline2("", "(( (" + (r * r).ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + "+" + (h * h).ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + ")/(2*" + r.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + ") )^2-(" + h.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + "-x)^2)^(1/2) + " + r.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + " - (" + (r * r).ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + "+" + (h * h).ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + ")/(2*" + r.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + ")", "", "0", "" + h.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture), false, 0, 0, 0, true, true);
+            if (type == 1)
+                Part.SketchManager.CreateEquationSpline2("", "(" + r.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + "/pi^0.5)*(arccos(1-2*x/" + h.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + ")-sin(2*arccos(1-2*x/" + h.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + "))/2)^0.5", "", "0", "" + h.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture), false, 0, 0, 0, true, true);
+
+            Part.ClearSelection2(true);
+
+            Part.SketchManager.InsertSketch(true);
+
+            Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+            Part.EditSketch();
+            Part.ClearSelection2(true);
+
+            Part.SetPickMode();
+            Part.Extension.SelectByID2("Point3", "SKETCHPOINT", 0, 0, 0, true, 0, null, 0);
+            Part.Extension.SelectByID2("Point1@Origine", "EXTSKETCHPOINT", 0, 0, 0, true, 0, null, 0);
+            Part.SketchAddConstraints("sgCOINCIDENT");
+            Part.ClearSelection2(true);
+            Part.SketchManager.InsertSketch(true);
+
+            Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+            Part.EditSketch();
+            Part.ClearSelection2(true);
+            Part.SketchManager.CreateLine(0, 0, 0, 10, 0, 0);
+            Part.ClearSelection2(true);
+            Part.SketchManager.InsertSketch(true);
+
+
+            Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+            Part.EditSketch();
+            Part.ClearSelection2(true);
+
+            //"("+r.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture)+"/pi^0.5)*(arccos(1-2*x/"+h.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture)+")-sin(2*arccos(1-2*x/"+h.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture)+"))/2)^0.5"
+            if (type == 0)
+                Part.SketchManager.CreateEquationSpline2("", "(( (" + (r * r).ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + "+" + (h * h).ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + ")/(2*" + r.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + ") )^2-(" + h.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + "-x)^2)^(1/2) + " + r.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + " - (" + (r * r).ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + "+" + (h * h).ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + ")/(2*" + r.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + ") - " + th.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture), "", "0", "" + h.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture), false, 0, 0, 0, true, true);
+            if (type == 1)
+                Part.SketchManager.CreateEquationSpline2("", "(" + r.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + "/pi^0.5)*(arccos(1-2*x/" + h.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + ")-sin(2*arccos(1-2*x/" + h.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + "))/2)^0.5 - " + th.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture), "", "0", "" + h.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture), false, 0, 0, 0, true, true);
+
+            Part.ClearSelection2(true);
+            Part.SketchManager.InsertSketch(true);
+
+            Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+            Part.EditSketch();
+            Part.ClearSelection2(true);
+            Part.SketchManager.CreateLine(h * 0.001, r * 0.001, 0, h * 0.001, (r - th) * 0.001, 0);
+            Part.ClearSelection2(true);
+            Part.SketchManager.InsertSketch(true);
+
+
+
+            Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+            Part.EditSketch();
+            Part.ClearSelection2(true);
+
+            Part.SetPickMode();
+            Part.Extension.SelectByID2("Spline4", "SKETCHSEGMENT", 0, 1, 0, true, 0, null, 0);
+            Part.Extension.SelectByID2("Line1", "SKETCHSEGMENT", 0, 0, 0, true, 0, null, 0);
+            Part.SketchManager.SketchTrim(1, 0, 0, 0);
+            Part.ClearSelection2(true);
+            Part.SketchManager.InsertSketch(true);
+
+
+            Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+            Part.EditSketch();
+            Part.ClearSelection2(true);
+            Part.SketchManager.CreateCenterLine(0, 0, 0, 1, 0, 0);
+            Part.ClearSelection2(true);
+            Part.SketchManager.InsertSketch(true);
+
+            Part.Extension.SelectByID2("Esquisse1", "SKETCH", 0, 0, 0, false, 0, null, 0);
+            Part.Extension.SelectByID2("Line3@Esquisse1", "SKETCHSEGMENT", 0, 0, 0, true, 16, null, 0);
+            Part.FeatureManager.FeatureRevolve2(true, true, false, false, false, false, 0, 0, 6.2831853071796, 0, false, false, 0.01, 0.01, 0, 0, 0, true, true, true);
+
+            ((SelectionMgr)Part.SelectionManager).EnableContourSelection = false;
+            Part.ClearSelection2(true);
+
+
+            fileName = Main.folderPath + "nosecone2.STEP";
+            Part.SaveAs3(fileName, 0, 2);
+            Part.SaveAs3(fileName.Replace("STEP", "SLDPRT"), 0, 2);
+            swApp.CloseDoc(Part.GetTitle());
+        }
+
+
+
+
+
+
 
         /*
 		public void test(MainSystem syst)
