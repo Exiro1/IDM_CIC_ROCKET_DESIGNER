@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
 using SolidWorks.Interop.sldworks;
-using SwConst;
+using SolidWorks.Interop.swconst;
 
 
 namespace RocketDesigner

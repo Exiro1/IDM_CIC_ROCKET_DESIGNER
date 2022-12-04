@@ -94,6 +94,17 @@ namespace RocketDesigner
 			sheet.Range["K9"].FormulaR1C1Local = ((fin.chord* fin.chord)/area);// chord²/area
 			sheet.Range["L9"].FormulaR1C1Local = (fin.TipChord/fin.chord);// tipchord/chord
 
+			sheet.Range["C13"].FormulaR1C1Local = 0;
+			sheet.Range["D13"].FormulaR1C1Local = 0;
+			sheet.Range["E13"].FormulaR1C1Local = 0;
+			sheet.Range["F13"].FormulaR1C1Local = 0;
+			sheet.Range["G13"].FormulaR1C1Local = 0;
+			sheet.Range["C14"].FormulaR1C1Local = 0;
+			sheet.Range["D14"].FormulaR1C1Local = 0;
+			sheet.Range["E14"].FormulaR1C1Local = 0;
+			sheet.Range["F14"].FormulaR1C1Local = 0;
+			sheet.Range["G14"].FormulaR1C1Local = 0;
+
 			//TANKS
 			foreach (RocketElement t in r.tanks)
 			{

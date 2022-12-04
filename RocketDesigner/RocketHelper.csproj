@@ -9,15 +9,16 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>RocketDesigner</RootNamespace>
     <AssemblyName>RocketDesigner</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\..\..\..\..\..\AppData\Roaming\idmcic_data\plugins\RocketDesigner\</OutputPath>
+    <OutputPath>..\..\..\..\..\AppData\Roaming\idmcic_data\plugins\RocketDesigner\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -33,7 +34,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="IdmCicApi">
-      <HintPath>..\..\..\..\..\..\..\AppData\Roaming\CNES\IDM-CIC\IdmCicApi.dll</HintPath>
+      <HintPath>..\..\..\..\..\AppData\Roaming\CNES\IDM-CIC\IdmCicApi.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Office.Interop.Excel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
@@ -41,7 +42,11 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="SolidWorks.Interop.sldworks">
-      <HintPath>..\..\..\..\..\..\..\Downloads\SolidWorks.Interop.sldworks.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\..\Program Files\SOLIDWORKS Corp\SOLIDWORKS\SolidWorks.Interop.sldworks.dll</HintPath>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="SolidWorks.Interop.swconst">
+      <HintPath>..\..\..\..\..\..\..\Program Files\SOLIDWORKS Corp\SOLIDWORKS\SolidWorks.Interop.swconst.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
     <Reference Include="System" />
@@ -106,15 +111,6 @@
       <Isolated>False</Isolated>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
-    <COMReference Include="SwConst">
-      <Guid>{4687F359-55D0-4CD3-B6CF-2EB42C11F989}</Guid>
-      <VersionMajor>29</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>False</Isolated>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-    </COMReference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="BatchGnerator.resx">
@@ -126,6 +122,12 @@
     <EmbeddedResource Include="progressBarCustom.resx">
       <DependentUpon>progressBarCustom.cs</DependentUpon>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <Content Include="utils.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

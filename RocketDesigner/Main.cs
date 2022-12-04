@@ -16,7 +16,7 @@ using Microsoft.Win32;
 using IdmCic.API.Model.Physics;
 using Microsoft.Office.Interop.Excel;
 using Assembly = IdmCic.API.Model.Subsystems.Assembly;
-using SwConst;
+
 using IdmCic.API.Model.IdmFiles;
 
 namespace RocketDesigner
